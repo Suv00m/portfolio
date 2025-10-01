@@ -60,7 +60,7 @@ export default function Contact() {
         <div className="max-w-4xl text-left w-full">
           {/* Date and Title */}
           <div className="mb-8">
-            <h1 className="mt-6 text-4xl font-medium font-sans tracking-tight">
+            <h1 className="mt-6 text-3xl font-medium font-sans tracking-tight">
               {new Date().toLocaleDateString('en-US', { 
                 year: 'numeric', 
                 month: '2-digit', 
@@ -72,7 +72,7 @@ export default function Contact() {
           </div>
 
           {/* Description */}
-          <div className="mb-16 space-y-6 text-lg leading-relaxed text-gray-600 md:text-xl text-left max-w-2xl text-gray-800">
+          <div className="mb-16 space-y-6 text-base leading-relaxed text-gray-600 md:text-lg text-left max-w-2xl text-gray-800">
             <p>
               I&apos;m always open to discussing new projects, creative ideas, or opportunities to be part of your vision. 
               Schedule a 30-minute call with me below, and let&apos;s explore how we can work together.
@@ -97,7 +97,7 @@ export default function Contact() {
 
           {/* Additional Contact Info */}
           <div className="mt-12 pt-8 border-t border-gray-200">
-            <div className="space-y-4 text-lg text-gray-600">
+            <div className="space-y-4 text-base text-gray-600">
               <p>
                 <span className="font-medium text-gray-900">Prefer email?</span>
                 <br />

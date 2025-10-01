@@ -164,7 +164,7 @@ export default function AdminDashboard() {
       <section className="flex min-h-screen flex-col items-center justify-center px-6 py-20">
         <div className="max-w-4xl text-left w-full">
           <div className="mb-8">
-            <h1 className="mt-6 text-4xl font-medium font-sans tracking-tight">
+            <h1 className="mt-6 text-3xl font-medium font-sans tracking-tight">
               {new Date().toLocaleDateString('en-US', { 
                 year: 'numeric', 
                 month: '2-digit', 
@@ -175,7 +175,7 @@ export default function AdminDashboard() {
             </h1>
           </div>
 
-          <div className="mb-16 space-y-6 text-lg leading-relaxed text-gray-600 md:text-xl text-left max-w-2xl text-gray-800">
+          <div className="mb-16 space-y-6 text-base leading-relaxed text-gray-600 md:text-lg text-left max-w-2xl text-gray-800">
             <div className="border-b border-gray-200 pb-8">
               <h2 className="text-2xl font-medium font-sans tracking-tight text-black mb-6">
                 Blog Management

@@ -13,7 +13,7 @@ export default function Socials() {
         <div className="max-w-4xl text-left">
           {/* Date and Title */}
           <div className="mb-8">
-            <h1 className="mt-6 text-4xl font-medium font-sans tracking-tight">
+            <h1 className="mt-6 text-3xl font-medium font-sans tracking-tight">
               {new Date().toLocaleDateString('en-US', { 
                 year: 'numeric', 
                 month: '2-digit', 
@@ -25,7 +25,7 @@ export default function Socials() {
           </div>
 
           {/* Social Links */}
-          <div className="mb-16 space-y-8 text-lg leading-relaxed text-gray-600 md:text-xl text-left max-w-2xl text-gray-800">
+          <div className="mb-16 space-y-8 text-base leading-relaxed text-gray-600 md:text-lg text-left max-w-2xl text-gray-800">
             <div className="space-y-6">
               <p>
                 Connect with me across different platforms where I share my work, thoughts, and projects.
@@ -33,7 +33,7 @@ export default function Socials() {
               
               {/* GitHub */}
               <div className="border-b border-gray-200 pb-6">
-                <h2 className="text-2xl font-medium font-sans tracking-tight text-black mb-3">
+                <h2 className="text-xl font-medium font-sans tracking-tight text-black mb-3">
                   GitHub
                 </h2>
                 <p className="text-gray-700 leading-relaxed mb-4">
@@ -49,7 +49,7 @@ export default function Socials() {
 
               {/* X (Twitter) */}
               <div className="border-b border-gray-200 pb-6">
-                <h2 className="text-2xl font-medium font-sans tracking-tight text-black mb-3">
+                <h2 className="text-xl font-medium font-sans tracking-tight text-black mb-3">
                   X (Twitter)
                 </h2>
                 <p className="text-gray-700 leading-relaxed mb-4">
@@ -65,7 +65,7 @@ export default function Socials() {
 
               {/* Kaggle */}
               <div className="border-b border-gray-200 pb-6">
-                <h2 className="text-2xl font-medium font-sans tracking-tight text-black mb-3">
+                <h2 className="text-xl font-medium font-sans tracking-tight text-black mb-3">
                   Kaggle
                 </h2>
                 <p className="text-gray-700 leading-relaxed mb-4">
@@ -81,7 +81,7 @@ export default function Socials() {
 
               {/* Hugging Face */}
               <div className="border-b border-gray-200 pb-6">
-                <h2 className="text-2xl font-medium font-sans tracking-tight text-black mb-3">
+                <h2 className="text-xl font-medium font-sans tracking-tight text-black mb-3">
                   Hugging Face
                 </h2>
                 <p className="text-gray-700 leading-relaxed mb-4">
@@ -97,7 +97,7 @@ export default function Socials() {
 
               {/* Email */}
               <div className="pb-6">
-                <h2 className="text-2xl font-medium font-sans tracking-tight text-black mb-3">
+                <h2 className="text-xl font-medium font-sans tracking-tight text-black mb-3">
                   Email
                 </h2>
                 <p className="text-gray-700 leading-relaxed mb-4">

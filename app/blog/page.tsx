@@ -36,7 +36,7 @@ export default function BlogDirectory() {
         <div className="max-w-4xl text-left w-full">
           {/* Date and Title */}
           <div className="mb-8">
-            <h1 className="mt-6 text-4xl font-medium font-sans tracking-tight">
+            <h1 className="mt-6 text-3xl font-medium font-sans tracking-tight">
               {new Date().toLocaleDateString('en-US', { 
                 year: 'numeric', 
                 month: '2-digit', 
@@ -48,7 +48,7 @@ export default function BlogDirectory() {
           </div>
 
           {/* Blog Posts List */}
-          <div className="mb-16 space-y-8 text-lg leading-relaxed text-gray-600 md:text-xl text-left max-w-2xl text-gray-800">
+          <div className="mb-16 space-y-8 text-base leading-relaxed text-gray-600 md:text-lg text-left max-w-2xl text-gray-800">
             {loading ? (
               <p>Loading blog posts...</p>
             ) : blogPosts.length === 0 ? (
@@ -64,7 +64,7 @@ export default function BlogDirectory() {
                         day: 'numeric'
                       })}
                     </time>
-                    <h2 className="mt-2 text-2xl font-medium font-sans tracking-tight text-black hover:text-purple-600 transition-colors">
+                    <h2 className="mt-2 text-xl font-medium font-sans tracking-tight text-black hover:text-purple-600 transition-colors">
                       <Link href={`/blog/${post.id}`}>
                         {post.title}
                       </Link>
@@ -79,9 +79,12 @@ export default function BlogDirectory() {
                   {post.links && post.links.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {post.links.slice(0, 3).map((link, index) => (
+                        <p key={index} className="text-sm text-gray-500">
+                          link:&nbsp;
                         <span key={index} className="text-sm text-purple-600">
-                          🔗 {link.text}
+                          {link.text}
                         </span>
+                        </p>
                       ))}
                       {post.links.length > 3 && (
                         <span className="text-sm text-gray-500">
@@ -90,12 +93,7 @@ export default function BlogDirectory() {
                       )}
                     </div>
                   )}
-                  <Link 
-                    href={`/blog/${post.id}`}
-                    className="inline-block mt-4 text-purple-600 hover:text-purple-800 font-medium underline underline-offset-2 transition-colors"
-                  >
-                    Read more →
-                  </Link>
+                  
                 </article>
               ))
             )}

@@ -61,7 +61,7 @@ export default function SingleBlog() {
               <br />
               Blog Post Not Found
             </h1>
-            <div className="mb-16 space-y-6 text-lg leading-relaxed text-gray-600 md:text-xl text-left max-w-2xl text-gray-800 mt-8">
+            <div className="mb-16 space-y-6 text-base leading-relaxed text-gray-600 md:text-lg text-left max-w-2xl text-gray-800 mt-8">
               <p>
                 Sorry, the blog post you&apos;re looking for doesn&apos;t exist or has been removed.
               </p>
@@ -146,7 +146,7 @@ export default function SingleBlog() {
           </div>
 
           {/* Blog Content */}
-          <div className="mb-16 space-y-6 text-lg leading-relaxed text-gray-600 md:text-xl text-left max-w-2xl text-gray-800">
+            <div className="mb-16 space-y-6 text-base leading-relaxed text-gray-600 md:text-lg text-left max-w-2xl text-gray-800">
             <div className="prose prose-lg max-w-none">
               {renderDescription(blogPost.description)}
             </div>
@@ -174,12 +174,12 @@ export default function SingleBlog() {
           </div>
 
           {/* Navigation Links */}
-          <div className="flex justify-between items-center mt-12 pt-8 border-t border-gray-200">
+          <div className="flex justify-between items-center mt-12 pt-8 border-t border-gray-200 gap-x-10">
             <Link 
               href="/blog"
               className="text-purple-600 hover:text-purple-800 font-medium underline underline-offset-2 transition-colors"
             >
-              ← Back to Blog Directory
+              ← Blog Directory
             </Link>
             <Link 
               href="/"
