@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import CenterNavbar from "@/components/CenterNavbar";
 
 export default function Contact() {
   useEffect(() => {
-    // Load Cal.com embed script
+    /* eslint-disable @typescript-eslint/no-explicit-any, prefer-const, prefer-rest-params */
+    // Load Cal.com embed script (third-party code)
     (function (C: any, A: string, L: string) {
       let p = function (a: any, ar: any) { a.q.push(ar); };
       let d = C.document;
@@ -19,7 +21,7 @@ export default function Contact() {
           cal.loaded = true;
         }
         if (ar[0] === L) {
-          const api = function () { p(api, arguments); };
+          const api: any = function () { p(api, arguments); };
           const namespace = ar[1];
           api.q = api.q || [];
           if (typeof namespace === "string") {
@@ -46,6 +48,7 @@ export default function Contact() {
       hideEventTypeDetails: false,
       layout: "month_view"
     });
+    /* eslint-enable @typescript-eslint/no-explicit-any, prefer-const, prefer-rest-params */
   }, []);
 
   return (
@@ -64,19 +67,19 @@ export default function Contact() {
                 day: '2-digit' 
               }).replace(/\//g, '.')}
               <br />
-              Let's Connect
+              Let&apos;s Connect
             </h1>
           </div>
 
           {/* Description */}
           <div className="mb-16 space-y-6 text-lg leading-relaxed text-gray-600 md:text-xl text-left max-w-2xl text-gray-800">
             <p>
-              I'm always open to discussing new projects, creative ideas, or opportunities to be part of your vision. 
-              Schedule a 30-minute call with me below, and let's explore how we can work together.
+              I&apos;m always open to discussing new projects, creative ideas, or opportunities to be part of your vision. 
+              Schedule a 30-minute call with me below, and let&apos;s explore how we can work together.
             </p>
             <p>
               Whether you want to talk about building something amazing, need help with a project, 
-              or just want to connect, I'd love to hear from you.
+              or just want to connect, I&apos;d love to hear from you.
             </p>
           </div>
 
@@ -98,22 +101,22 @@ export default function Contact() {
               <p>
                 <span className="font-medium text-gray-900">Prefer email?</span>
                 <br />
-                Reach out directly and I'll get back to you within 24 hours.
+                Reach out directly and I&apos;ll get back to you within 24 hours.
               </p>
               <p className="text-gray-500 text-base">
-                You can also find me on LinkedIn, Twitter, or GitHub. Let's create something amazing together.
+                You can also find me on LinkedIn, Twitter, or GitHub. Let&apos;s create something amazing together.
               </p>
             </div>
           </div>
 
           {/* Back to Home Link */}
           <div className="mt-12">
-            <a 
+            <Link 
               href="/"
               className="text-purple-600 hover:text-purple-800 font-medium underline underline-offset-2 transition-colors"
             >
               ← Back to Home
-            </a>
+            </Link>
           </div>
         </div>
       </section>

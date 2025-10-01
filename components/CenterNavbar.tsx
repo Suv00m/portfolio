@@ -11,8 +11,8 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: "Home", href: "/", description: "Back to home" },
-  { label: "About", href: "#about", description: "Learn more about me" },
   { label: "Blog", href: "/blog", description: "Read my blog" },
+  { label: "Socials", href: "/socials", description: "Connect with me" },
   { label: "Contact", href: "/contact", description: "Schedule a call" },
 ];
 
@@ -23,7 +23,7 @@ export default function CenterNavbar() {
   return (
     <>
       {/* Navbar Container */}
-      <nav className="fixed right-8 top-1/2 z-50 -translate-y-1/2">
+      <nav className="fixed right-8 top-1/3 z-50 -translate-y-1/2">
         {/* Toggle Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}

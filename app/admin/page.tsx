@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import CenterNavbar from "@/components/CenterNavbar";
 import { BlogPost, BlogLink } from "@/lib/types";
 
@@ -344,12 +345,12 @@ export default function AdminDashboard() {
           </div>
 
           <div className="mt-12 pt-8 border-t border-gray-200">
-            <a 
+            <Link 
               href="/blog"
               className="text-purple-600 hover:text-purple-800 font-medium underline underline-offset-2 transition-colors"
             >
               ← View Public Blog
-            </a>
+            </Link>
           </div>
         </div>
       </section>

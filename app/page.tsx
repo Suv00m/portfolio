@@ -27,7 +27,7 @@ export default function Home() {
           {/* Description */}
           <div className="mb-16 space-y-6 text-lg leading-relaxed text-gray-600 md:text-xl text-left max-w-2xl text-gray-800">
             <p>
-              hello, i'm engineer from india, i enjoy building things that live on the internet.
+              hello, i&apos;m engineer from india, i enjoy building things that live on the internet.
               also love to play with data and build things that help people.
             </p>
             <p>
@@ -41,13 +41,13 @@ export default function Home() {
                     behooked.co
                   </LinkPreview>
                 </span>
-                {", a startup which i grew from $0 to $1,000 MRR in 3 months."}
+                {", a startup which grew from $0 to $1,000 MRR in 3 months, after launching."}
               </span>
               <br />
-              also i'm a 2x Kaggle Expert recognized for excellence in machine learning and data analysis.
+              also i&apos;m a 2x Kaggle Expert recognized for excellence in machine learning and data analysis.
             </p>
             <p>
-              Let's create something amazing together and push the boundaries of what's possible.
+              Let&apos;s create something amazing together and push the boundaries of what&apos;s possible.
             </p>
           </div>
 

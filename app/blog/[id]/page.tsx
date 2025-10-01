@@ -63,7 +63,7 @@ export default function SingleBlog() {
             </h1>
             <div className="mb-16 space-y-6 text-lg leading-relaxed text-gray-600 md:text-xl text-left max-w-2xl text-gray-800 mt-8">
               <p>
-                Sorry, the blog post you're looking for doesn't exist or has been removed.
+                Sorry, the blog post you&apos;re looking for doesn&apos;t exist or has been removed.
               </p>
               <Link 
                 href="/blog"
@@ -136,8 +136,8 @@ export default function SingleBlog() {
             <time className="text-sm text-gray-500 font-medium">
               {new Date(blogPost.created_at).toLocaleDateString('en-US', {
                 year: 'numeric',
-                month: 'long',
-                day: 'numeric'
+                month: '2-digit',
+                day: '2-digit'
               })}
             </time>
             <h1 className="mt-6 text-4xl font-medium font-sans tracking-tight">

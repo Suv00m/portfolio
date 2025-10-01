@@ -39,3 +39,12 @@ next-env.d.ts
 
 # all the md files
 *.md
+
+#build files
+.next
+node_modules
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
