@@ -23,7 +23,7 @@ export default function CenterNavbar() {
   return (
     <>
       {/* Navbar Container */}
-      <nav className="fixed right-8 top-1/3 z-50 -translate-y-1/2">
+      <nav className="fixed right-4 top-4 z-50 md:right-8 md:top-1/3 md:-translate-y-1/2">
         {/* Toggle Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -60,9 +60,10 @@ export default function CenterNavbar() {
         <div
           className={cn(
             "absolute right-0 top-0 overflow-hidden rounded-2xl border border-gray-200 bg-white/90 backdrop-blur-sm shadow-xl transition-all duration-500 ease-out",
+            "md:right-0 md:top-0",
             isOpen
-              ? "w-64 opacity-100 -translate-x-0 translate-y-0"
-              : "w-12 opacity-0 translate-x-2 -translate-y-2 pointer-events-none"
+              ? "w-64 opacity-100 -translate-x-0 translate-y-0 md:-translate-x-0 md:translate-y-0"
+              : "w-12 opacity-0 translate-x-2 translate-y-2 md:translate-x-2 md:-translate-y-2 pointer-events-none"
           )}
         >
           {/* Header */}
