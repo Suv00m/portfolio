@@ -71,10 +71,13 @@ export default function BlogDirectory() {
                     </h2>
                   </div>
                   <p className="text-gray-700 leading-relaxed line-clamp-3">
-                    {post.description.length > 200 
-                      ? `${post.description.substring(0, 200)}...` 
-                      : post.description
-                    }
+                    {(() => {
+                      // Strip HTML tags for preview
+                      const textContent = post.description.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+                      return textContent.length > 200 
+                        ? `${textContent.substring(0, 200)}...` 
+                        : textContent;
+                    })()}
                   </p>
                   {post.links && post.links.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">

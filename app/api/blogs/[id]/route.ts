@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase, getServiceSupabase } from '@/lib/supabase';
+import { getBlogPost, updateBlogPost, deleteBlogPost } from '@/lib/blogs';
 
 // GET - Fetch a single blog post (public)
 export async function GET(
@@ -8,13 +8,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { data, error } = await supabase
-      .from('blog_posts')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) throw error;
+    const data = await getBlogPost(id);
 
     if (!data) {
       return NextResponse.json(
@@ -49,15 +43,7 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    
-    // Use service role client for admin operations
-    const serviceSupabase = getServiceSupabase();
-    const { error } = await serviceSupabase
-      .from('blog_posts')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
+    await deleteBlogPost(id);
 
     return NextResponse.json({ success: true, message: 'Blog post deleted' });
   } catch (error) {
@@ -87,21 +73,11 @@ export async function PUT(
     const body = await request.json();
     const { id } = await params;
 
-    // Use service role client for admin operations
-    const serviceSupabase = getServiceSupabase();
-    const { data, error } = await serviceSupabase
-      .from('blog_posts')
-      .update({
-        title: body.title,
-        description: body.description,
-        links: body.links || [],
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
+    const data = await updateBlogPost(id, {
+      title: body.title,
+      description: body.description,
+      links: body.links || [],
+    });
 
     return NextResponse.json({ success: true, data });
   } catch (error) {

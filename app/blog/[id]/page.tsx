@@ -6,6 +6,7 @@ import Link from "next/link";
 import CenterNavbar from "@/components/CenterNavbar";
 import { LinkPreview } from "@/components/ui/link-preview";
 import { BlogPost } from "@/lib/types";
+import { processEmbedContent } from "@/lib/embed-utils";
 
 export default function SingleBlog() {
   const params = useParams();
@@ -78,50 +79,15 @@ export default function SingleBlog() {
     );
   }
 
-  // Function to render description with inline link previews
-  const renderDescription = (description: string) => {
-    if (!blogPost.links || blogPost.links.length === 0) {
-      return description.split('\n').map((paragraph, index) => (
-        <p key={index} className="mb-6">
-          {paragraph}
-        </p>
-      ));
-    }
-
-    // Split description by paragraphs
-    const paragraphs = description.split('\n');
-    
-    return paragraphs.map((paragraph, pIndex) => {
-      let content: React.ReactNode = paragraph;
-      
-      // Replace link placeholders with LinkPreview components
-      blogPost.links?.forEach((link, lIndex) => {
-        const linkPattern = new RegExp(`\\b${link.text}\\b`, 'gi');
-        if (typeof content === 'string' && linkPattern.test(content)) {
-          const parts = content.split(linkPattern);
-          content = parts.reduce<React.ReactNode[]>((acc, part, index) => {
-            if (index === 0) return [part];
-            return [
-              ...acc,
-              <LinkPreview
-                key={`${pIndex}-${lIndex}-${index}`}
-                url={link.url}
-                className="text-purple-600 hover:text-purple-800 font-medium underline underline-offset-2"
-              >
-                {link.text}
-              </LinkPreview>,
-              part
-            ];
-          }, []);
-        }
-      });
-      
-      return (
-        <p key={pIndex} className="mb-6">
-          {content}
-        </p>
-      );
-    });
+  // Render HTML content from rich text editor
+  const renderDescription = (htmlContent: string) => {
+    return (
+      <div
+        className="prose prose-lg max-w-none prose-headings:font-sans prose-headings:tracking-tight prose-p:text-gray-800 prose-p:leading-relaxed prose-a:text-purple-600 prose-a:no-underline hover:prose-a:text-purple-800 prose-strong:text-black prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-gray-100 prose-pre:border prose-pre:border-gray-200 prose-img:rounded-lg prose-img:my-4 [&_iframe]:w-full [&_iframe]:rounded-lg [&_iframe]:aspect-video [&_iframe]:h-[400px] [&_iframe]:my-4 [&_iframe]:border-0 [&_.embed-container]:my-4"
+        dangerouslySetInnerHTML={{ __html: processEmbedContent(htmlContent) }}
+        suppressHydrationWarning
+      />
+    );
   };
 
   return (
@@ -147,9 +113,7 @@ export default function SingleBlog() {
 
           {/* Blog Content */}
             <div className="mb-16 space-y-6 text-base leading-relaxed text-gray-600 md:text-lg text-left max-w-2xl text-gray-800">
-            <div className="prose prose-lg max-w-none">
               {renderDescription(blogPost.description)}
-            </div>
 
             {/* Related Links Section */}
             {blogPost.links && blogPost.links.length > 0 && (

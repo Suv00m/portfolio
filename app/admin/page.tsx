@@ -3,11 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import CenterNavbar from "@/components/CenterNavbar";
+import RichTextEditor from "@/components/RichTextEditor";
 import { BlogPost, BlogLink } from "@/lib/types";
+import { processEmbedContent } from "@/lib/embed-utils";
 
 export default function AdminDashboard() {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [isPreview, setIsPreview] = useState(false);
   const [adminKey, setAdminKey] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [newPost, setNewPost] = useState({
@@ -189,99 +192,175 @@ export default function AdminDashboard() {
                   + Create New Blog Post
                 </button>
               ) : (
-                <form onSubmit={handleCreatePost} className="space-y-4">
-                  <div>
-                    <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                      Blog Title
-                    </label>
-                    <input
-                      type="text"
-                      id="title"
-                      value={newPost.title}
-                      onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
-                      placeholder="Enter blog title..."
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                      Blog Description
-                    </label>
-                    <textarea
-                      id="description"
-                      value={newPost.description}
-                      onChange={(e) => setNewPost({ ...newPost, description: e.target.value })}
-                      rows={6}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base resize-vertical"
-                      placeholder="Enter blog description..."
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Links (Optional)
-                    </label>
-                    <div className="space-y-2">
-                      {newPost.links?.map((link, index) => (
-                        <div key={index} className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
-                          <span className="flex-1 text-sm">{link.text} → {link.url}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeLink(index)}
-                            className="text-red-600 hover:text-red-800 text-sm"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))}
-                      <div className="flex space-x-2">
-                        <input
-                          type="text"
-                          value={newLink.text}
-                          onChange={(e) => setNewLink({ ...newLink, text: e.target.value })}
-                          placeholder="Link text..."
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                        />
-                        <input
-                          type="url"
-                          value={newLink.url}
-                          onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
-                          placeholder="https://..."
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                        />
-                        <button
-                          type="button"
-                          onClick={addLink}
-                          className="px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700"
-                        >
-                          Add
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex space-x-4">
-                    <button
-                      type="submit"
-                      className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
-                    >
-                      Create Post
-                    </button>
+                <div className="space-y-4">
+                  {/* Preview/Edit Toggle */}
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium text-gray-700">
+                      {isPreview ? 'Preview' : 'Edit'}
+                    </h3>
                     <button
                       type="button"
-                      onClick={() => {
-                        setIsCreating(false);
-                        setNewPost({ title: "", description: "", links: [] });
-                      }}
-                      className="px-6 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                      onClick={() => setIsPreview(!isPreview)}
+                      className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
                     >
-                      Cancel
+                      {isPreview ? '✏️ Edit' : '👁️ Preview'}
                     </button>
                   </div>
-                </form>
+
+                  {isPreview ? (
+                    /* Preview Mode */
+                    <div className="border border-gray-300 rounded-lg p-8 bg-white">
+                      {newPost.title ? (
+                        <>
+                          <div className="mb-8">
+                            <time className="text-sm text-gray-500 font-medium">
+                              {new Date().toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit'
+                              })}
+                            </time>
+                            <h1 className="mt-6 text-4xl font-medium font-sans tracking-tight">
+                              {newPost.title}
+                            </h1>
+                          </div>
+
+                          <div className="mb-16 space-y-6 text-base leading-relaxed text-gray-600 md:text-lg text-left max-w-2xl text-gray-800">
+                            {newPost.description ? (
+                              <div
+                                className="prose prose-lg max-w-none prose-headings:font-sans prose-headings:tracking-tight prose-p:text-gray-800 prose-p:leading-relaxed prose-a:text-purple-600 prose-a:no-underline hover:prose-a:text-purple-800 prose-strong:text-black prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-gray-100 prose-pre:border prose-pre:border-gray-200 prose-img:rounded-lg prose-img:my-4 [&_iframe]:w-full [&_iframe]:rounded-lg [&_iframe]:aspect-video [&_iframe]:h-[400px] [&_iframe]:my-4 [&_iframe]:border-0 [&_.embed-container]:my-4"
+                                dangerouslySetInnerHTML={{ __html: processEmbedContent(newPost.description) }}
+                                suppressHydrationWarning
+                              />
+                            ) : (
+                              <p className="text-gray-400 italic">No content yet. Start writing to see preview.</p>
+                            )}
+
+                            {/* Related Links Section */}
+                            {newPost.links && newPost.links.length > 0 && (
+                              <div className="mt-12 pt-8 border-t border-gray-200">
+                                <h2 className="text-xl font-medium font-sans tracking-tight text-black mb-4">
+                                  Related Links
+                                </h2>
+                                <div className="space-y-3">
+                                  {newPost.links.map((link, index) => (
+                                    <div key={index}>
+                                      <a
+                                        href={link.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-purple-600 hover:text-purple-800 font-medium underline underline-offset-2"
+                                      >
+                                        {link.text} →
+                                      </a>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center py-12">
+                          <p className="text-gray-400 italic">Add a title and content to see preview.</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* Edit Mode */
+                    <form onSubmit={handleCreatePost} className="space-y-4">
+                      <div>
+                        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                          Blog Title
+                        </label>
+                        <input
+                          type="text"
+                          id="title"
+                          value={newPost.title}
+                          onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
+                          placeholder="Enter blog title..."
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                          Blog Content
+                        </label>
+                        <RichTextEditor
+                          content={newPost.description}
+                          onChange={(content) => setNewPost({ ...newPost, description: content })}
+                          placeholder="Start writing your blog post... Use the toolbar to format text, add images, links, code blocks, and more!"
+                          adminKey={adminKey}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Links (Optional)
+                        </label>
+                        <div className="space-y-2">
+                          {newPost.links?.map((link, index) => (
+                            <div key={index} className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
+                              <span className="flex-1 text-sm">{link.text} → {link.url}</span>
+                              <button
+                                type="button"
+                                onClick={() => removeLink(index)}
+                                className="text-red-600 hover:text-red-800 text-sm"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ))}
+                          <div className="flex space-x-2">
+                            <input
+                              type="text"
+                              value={newLink.text}
+                              onChange={(e) => setNewLink({ ...newLink, text: e.target.value })}
+                              placeholder="Link text..."
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            />
+                            <input
+                              type="url"
+                              value={newLink.url}
+                              onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
+                              placeholder="https://..."
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            />
+                            <button
+                              type="button"
+                              onClick={addLink}
+                              className="px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700"
+                            >
+                              Add
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex space-x-4">
+                        <button
+                          type="submit"
+                          className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                        >
+                          Create Post
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCreating(false);
+                            setIsPreview(false);
+                            setNewPost({ title: "", description: "", links: [] });
+                          }}
+                          className="px-6 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
               )}
             </div>
 
@@ -317,10 +396,13 @@ export default function AdminDashboard() {
                         </button>
                       </div>
                       <p className="text-gray-700 leading-relaxed text-base line-clamp-3">
-                        {post.description.length > 150 
-                          ? `${post.description.substring(0, 150)}...` 
-                          : post.description
-                        }
+                        {(() => {
+                          // Strip HTML tags for preview
+                          const textContent = post.description.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+                          return textContent.length > 150 
+                            ? `${textContent.substring(0, 150)}...` 
+                            : textContent;
+                        })()}
                       </p>
                       {post.links && post.links.length > 0 && (
                         <div className="mt-3">

@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase, getServiceSupabase } from '@/lib/supabase';
+import { getAllBlogPosts, createBlogPost } from '@/lib/blogs';
 import { CreateBlogPost } from '@/lib/types';
 
 // GET - Fetch all blog posts (public)
 export async function GET() {
   try {
-    const { data, error } = await supabase
-      .from('blog_posts')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
+    const data = await getAllBlogPosts();
     return NextResponse.json({ success: true, data });
   } catch (error) {
     console.error('Error fetching blogs:', error);
@@ -44,22 +38,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use service role client for admin operations
-    const serviceSupabase = getServiceSupabase();
-    const { data, error } = await serviceSupabase
-      .from('blog_posts')
-      .insert([
-        {
-          title: body.title,
-          description: body.description,
-          links: body.links || [],
-        },
-      ])
-      .select()
-      .single();
-
-    if (error) throw error;
-
+    const data = await createBlogPost(body);
     return NextResponse.json({ success: true, data }, { status: 201 });
   } catch (error) {
     console.error('Error creating blog:', error);

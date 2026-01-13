@@ -6,7 +6,7 @@ export interface BlogLink {
 export interface BlogPost {
   id: string;
   title: string;
-  description: string;
+  description: string; // HTML content from rich text editor
   links?: BlogLink[];
   created_at: string;
   updated_at: string;
@@ -14,6 +14,6 @@ export interface BlogPost {
 
 export interface CreateBlogPost {
   title: string;
-  description: string;
+  description: string; // HTML content from rich text editor
   links?: BlogLink[];
 }
