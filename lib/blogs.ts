@@ -11,7 +11,7 @@ const BLOGS_DIR = join(process.cwd(), 'data', 'blogs');
 async function ensureBlogsDir(): Promise<void> {
   try {
     await mkdir(BLOGS_DIR, { recursive: true });
-  } catch (error) {
+  } catch {
     // Directory already exists, ignore
   }
 }

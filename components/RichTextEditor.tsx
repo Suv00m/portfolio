@@ -110,7 +110,12 @@ export default function RichTextEditor({
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = handleImageUpload;
+    input.onchange = (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files) {
+        handleImageUpload({ target } as React.ChangeEvent<HTMLInputElement>);
+      }
+    };
     input.click();
   };
 
@@ -255,7 +260,7 @@ export default function RichTextEditor({
           }`}
           title="Quote"
         >
-          "
+          &quot;
         </button>
 
         <div className="w-px h-6 bg-gray-300 mx-1" />
