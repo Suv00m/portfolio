@@ -8,7 +8,7 @@ import CodeBlock from '@tiptap/extension-code-block';
 import { TextStyle } from '@tiptap/extension-text-style';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface RichTextEditorProps {
   content: string;
@@ -24,6 +24,52 @@ export default function RichTextEditor({
   adminKey = '',
 }: RichTextEditorProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState<string>('');
+  const [isAILoading, setIsAILoading] = useState(false);
+  const [isAIEnabled, setIsAIEnabled] = useState(true);
+  const autocompleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerAutocomplete = useCallback(async (editorInstance: any) => {
+    if (!isAIEnabled || isAILoading) return;
+
+    // Clear existing timeout
+    if (autocompleteTimeoutRef.current) {
+      clearTimeout(autocompleteTimeoutRef.current);
+    }
+
+    // Debounce autocomplete requests
+    autocompleteTimeoutRef.current = setTimeout(async () => {
+      const { from } = editorInstance.state.selection;
+      const text = editorInstance.state.doc.textContent;
+      
+      if (text.length < 10) return; // Don't autocomplete for very short text
+
+      setIsAILoading(true);
+      try {
+        const response = await fetch('/api/ai/autocomplete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text,
+            cursorPosition: from,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.suggestion) {
+            setAiSuggestion(data.suggestion);
+          }
+        }
+      } catch (error) {
+        console.error('Autocomplete error:', error);
+      } finally {
+        setIsAILoading(false);
+      }
+    }, 500); // 500ms debounce
+  }, [isAIEnabled, isAILoading]);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -65,6 +111,10 @@ export default function RichTextEditor({
     content,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
+      // Trigger autocomplete if enabled
+      if (isAIEnabled && editor.state.selection.empty) {
+        triggerAutocomplete(editor);
+      }
     },
     editorProps: {
       attributes: {
@@ -105,6 +155,50 @@ export default function RichTextEditor({
       event.target.value = '';
     }
   };
+
+  const acceptSuggestion = useCallback(() => {
+    if (!editor || !aiSuggestion) return;
+
+    editor.chain().focus().insertContent(aiSuggestion + ' ').run();
+    setAiSuggestion('');
+  }, [editor, aiSuggestion]);
+
+  const dismissSuggestion = useCallback(() => {
+    setAiSuggestion('');
+  }, []);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    if (!editor) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (aiSuggestion) {
+        if (event.key === 'Tab') {
+          event.preventDefault();
+          acceptSuggestion();
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          dismissSuggestion();
+        }
+      }
+    };
+
+    const editorElement = editor.view.dom;
+    editorElement.addEventListener('keydown', handleKeyDown as any);
+
+    return () => {
+      editorElement.removeEventListener('keydown', handleKeyDown as any);
+    };
+  }, [editor, aiSuggestion, acceptSuggestion, dismissSuggestion]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (autocompleteTimeoutRef.current) {
+        clearTimeout(autocompleteTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const addImage = () => {
     const input = document.createElement('input');
@@ -294,6 +388,22 @@ export default function RichTextEditor({
 
         <div className="w-px h-6 bg-gray-300 mx-1" />
 
+        {/* AI Autocomplete Toggle */}
+        <button
+          type="button"
+          onClick={() => setIsAIEnabled(!isAIEnabled)}
+          className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+            isAIEnabled
+              ? 'bg-purple-600 text-white'
+              : 'bg-white text-gray-700 hover:bg-gray-100'
+          }`}
+          title={isAIEnabled ? 'AI Autocomplete: On (Tab to accept, Esc to dismiss)' : 'AI Autocomplete: Off'}
+        >
+          {isAILoading ? '⏳' : '✨'}
+        </button>
+
+        <div className="w-px h-6 bg-gray-300 mx-1" />
+
         {/* Link & Image */}
         <button
           type="button"
@@ -341,7 +451,36 @@ export default function RichTextEditor({
       </div>
 
       {/* Editor Content */}
-      <EditorContent editor={editor} className="min-h-[300px] bg-white" />
+      <div className="relative">
+        <EditorContent editor={editor} className="min-h-[300px] bg-white" />
+        {/* AI Suggestion Overlay */}
+        {aiSuggestion && isAIEnabled && (
+          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+            <div className="flex-1">
+              <span className="text-xs text-gray-500 mr-2">AI Suggestion:</span>
+              <span className="text-sm text-gray-600 italic">{aiSuggestion}</span>
+            </div>
+            <div className="flex gap-2 ml-4">
+              <button
+                type="button"
+                onClick={acceptSuggestion}
+                className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700"
+                title="Accept (Tab)"
+              >
+                Accept
+              </button>
+              <button
+                type="button"
+                onClick={dismissSuggestion}
+                className="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                title="Dismiss (Esc)"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

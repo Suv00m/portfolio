@@ -17,8 +17,10 @@ export function convertToEmbedUrl(url: string): string {
   return url;
 }
 
+import { addCopyButtonsToCodeBlocks } from './code-copy-utils';
+
 /**
- * Process HTML content to ensure embeds are properly formatted
+ * Process HTML content to ensure embeds are properly formatted and add copy buttons to code blocks
  */
 export function processEmbedContent(html: string): string {
   if (!html) return html;
@@ -72,6 +74,9 @@ export function processEmbedContent(html: string): string {
   
   // Remove any other div wrappers around iframes
   processed = processed.replace(/<div[^>]*class=["']embed-wrapper[^"']*["'][^>]*>(<iframe[^>]*><\/iframe>)<\/div>/gi, '$1');
+  
+  // Add copy buttons to code blocks
+  processed = addCopyButtonsToCodeBlocks(processed);
   
   return processed;
 }

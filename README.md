@@ -25,13 +25,19 @@ A modern, production-ready portfolio website with an integrated blog system buil
 - Add multiple links to blog posts with preview support
 - Real-time updates
 - Secure authentication with key-based access
+- **AI-Powered Features**:
+  - ✨ Inline autocomplete suggestions as you type (like GitHub Copilot)
+  - 💡 Idea Box for generating blog post topics
+  - ✍️ Writing Assistant for expanding, improving, summarizing, and fixing grammar
 
 ## 🚀 Tech Stack
 
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **Storage**: JSON files in `data/blogs/` directory
+- **AI**: Vercel AI SDK with OpenRouter integration
+- **Rich Text Editor**: TipTap
 - **UI Components**: Custom components + Radix UI
 - **Animations**: Framer Motion
 
@@ -48,11 +54,18 @@ cd profile
 npm install
 ```
 
-3. Set up environment variables (optional, for admin access):
+3. Set up environment variables:
 Create `.env.local` file:
 ```env
 ADMIN_SECRET_KEY=your-secret-admin-key
+OPENROUTER_API_KEY=your-openrouter-api-key
 ```
+
+**Note**: 
+- `ADMIN_SECRET_KEY` is required for admin panel access
+- `OPENROUTER_API_KEY` is optional but required for AI features (autocomplete, idea generation, writing assistant)
+  - Get your API key from [OpenRouter](https://openrouter.ai/)
+  - AI features will be disabled if the key is not set
 
 4. Run the development server:
 ```bash
@@ -69,7 +82,8 @@ npm run dev
 /app
   ├── /admin           # Admin dashboard (hidden)
   ├── /api
-  │   └── /blogs       # REST API endpoints
+  │   ├── /blogs       # REST API endpoints
+  │   └── /ai          # AI API endpoints (autocomplete, ideas, assist)
   ├── /blog            # Public blog pages
   │   └── /[id]        # Single blog post
   ├── page.tsx         # Home page
@@ -78,13 +92,20 @@ npm run dev
 
 /components
   ├── CenterNavbar.tsx # Custom navigation
+  ├── RichTextEditor.tsx  # Rich text editor with AI autocomplete
+  ├── IdeaBox.tsx      # AI idea generation and writing assistant
   └── /ui
       └── /link-preview.tsx  # Link preview component
 
 /lib
   ├── blogs.ts         # Blog file operations
   ├── types.ts         # TypeScript interfaces
-  └── utils.ts         # Utility functions
+  ├── utils.ts         # Utility functions
+  └── ai-config.ts     # AI/OpenRouter configuration
+
+/components
+  ├── RichTextEditor.tsx  # Rich text editor with AI autocomplete
+  └── IdeaBox.tsx         # AI idea generation and writing assistant
 
 /data
   └── /blogs           # Blog post JSON files
@@ -119,12 +140,44 @@ All blog posts are stored as JSON files in the `data/blogs/` directory:
 
 1. Push to GitHub
 2. Import to Vercel
-3. Add `ADMIN_SECRET_KEY` environment variable (optional, for admin access)
+3. Add environment variables:
+   - `ADMIN_SECRET_KEY` (required for admin access)
+   - `OPENROUTER_API_KEY` (optional, for AI features)
 4. Deploy
 
 ### Other Platforms
 
-Set the `ADMIN_SECRET_KEY` environment variable if you want to use the admin panel. No database setup required!
+Set the following environment variables:
+- `ADMIN_SECRET_KEY` - Required for admin panel access
+- `OPENROUTER_API_KEY` - Optional, enables AI features (autocomplete, idea generation, writing assistant)
+
+No database setup required!
+
+## 🤖 AI Features
+
+### Inline Autocomplete
+- AI-powered text suggestions appear as you type in the rich text editor
+- Toggle on/off with the ✨ button in the toolbar
+- Press **Tab** to accept a suggestion, **Esc** to dismiss
+- Suggestions are debounced (500ms) to avoid excessive API calls
+
+### Idea Box
+Located in the admin panel when creating a new blog post:
+
+**Ideas Tab:**
+- Click "Generate Blog Post Ideas" to get AI-generated topic suggestions
+- Click any idea to use it as your blog post title
+- Ideas are unique and diverse
+
+**Writing Assistant Tab:**
+- Paste your content and choose an action:
+  - **Expand**: Make content more detailed and comprehensive
+  - **Improve**: Enhance clarity, flow, and readability
+  - **Summarize**: Create a concise summary
+  - **Fix Grammar**: Correct grammatical errors and improve clarity
+- Click "Insert into Editor" to add the processed content
+
+**Note**: AI features require `OPENROUTER_API_KEY` to be set in your environment variables.
 
 ## 📝 Managing Blog Posts
 

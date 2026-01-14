@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import CenterNavbar from "@/components/CenterNavbar";
 import RichTextEditor from "@/components/RichTextEditor";
+import IdeaBox from "@/components/IdeaBox";
 import { BlogPost, BlogLink } from "@/lib/types";
 import { processEmbedContent } from "@/lib/embed-utils";
+import { initializeCopyButtons } from "@/lib/code-copy-utils";
 
 export default function AdminDashboard() {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
@@ -19,12 +21,20 @@ export default function AdminDashboard() {
     links: [] as BlogLink[]
   });
   const [newLink, setNewLink] = useState({ text: "", url: "" });
+  const previewContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchBlogs();
     }
   }, [isAuthenticated]);
+
+  // Initialize copy buttons in preview when content changes
+  useEffect(() => {
+    if (isPreview && newPost.description && previewContentRef.current) {
+      initializeCopyButtons(previewContentRef.current);
+    }
+  }, [isPreview, newPost.description]);
 
   const fetchBlogs = async () => {
     try {
@@ -207,6 +217,25 @@ export default function AdminDashboard() {
                     </button>
                   </div>
 
+                  {/* Idea Box */}
+                  {!isPreview && (
+                    <div className="mb-6">
+                      <IdeaBox
+                        onInsertTitle={(title) => {
+                          setNewPost({ ...newPost, title });
+                        }}
+                        onInsertContent={(content) => {
+                          // Append or replace content in editor
+                          const currentContent = newPost.description || '';
+                          const newContent = currentContent 
+                            ? `${currentContent}\n\n${content}` 
+                            : content;
+                          setNewPost({ ...newPost, description: newContent });
+                        }}
+                      />
+                    </div>
+                  )}
+
                   {isPreview ? (
                     /* Preview Mode */
                     <div className="border border-gray-300 rounded-lg p-8 bg-white">
@@ -228,7 +257,8 @@ export default function AdminDashboard() {
                           <div className="mb-16 space-y-6 text-base leading-relaxed text-gray-600 md:text-lg text-left max-w-2xl text-gray-800">
                             {newPost.description ? (
                               <div
-                                className="prose prose-lg max-w-none prose-headings:font-sans prose-headings:tracking-tight prose-p:text-gray-800 prose-p:leading-relaxed prose-a:text-purple-600 prose-a:no-underline hover:prose-a:text-purple-800 prose-strong:text-black prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-gray-100 prose-pre:border prose-pre:border-gray-200 prose-img:rounded-lg prose-img:my-4 [&_iframe]:w-full [&_iframe]:rounded-lg [&_iframe]:aspect-video [&_iframe]:h-[400px] [&_iframe]:my-4 [&_iframe]:border-0 [&_.embed-container]:my-4"
+                                ref={previewContentRef}
+                                className="prose prose-lg max-w-none prose-headings:font-sans prose-headings:tracking-tight prose-p:text-gray-800 prose-p:leading-relaxed prose-a:text-purple-600 prose-a:no-underline hover:prose-a:text-purple-800 prose-strong:text-black prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-gray-100 prose-pre:border prose-pre:border-gray-200 prose-pre:overflow-x-auto prose-pre:whitespace-pre prose-pre:word-wrap-normal prose-pre:word-break-normal prose-img:rounded-lg prose-img:my-4 [&_iframe]:w-full [&_iframe]:rounded-lg [&_iframe]:aspect-video [&_iframe]:h-[400px] [&_iframe]:my-4 [&_iframe]:border-0 [&_.embed-container]:my-4 [&_pre_code]:whitespace-pre [&_pre_code]:overflow-x-auto [&_pre_code]:block"
                                 dangerouslySetInnerHTML={{ __html: processEmbedContent(newPost.description) }}
                                 suppressHydrationWarning
                               />
