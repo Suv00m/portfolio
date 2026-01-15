@@ -121,6 +121,17 @@ export default function SingleBlog() {
             </h1>
           </div>
 
+          {/* Thumbnail */}
+          {blogPost.thumbnail && (
+            <div className="mb-8">
+              <img 
+                src={blogPost.thumbnail} 
+                alt={blogPost.title}
+                className="w-full h-96 object-cover rounded-lg"
+              />
+            </div>
+          )}
+
           {/* Blog Content */}
             <div className="mb-16 space-y-6 text-base leading-relaxed text-gray-600 md:text-lg text-left max-w-2xl text-gray-800">
               {renderDescription(blogPost.description)}

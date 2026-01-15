@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
+import { requireAuth } from '@/lib/auth-middleware';
 
 export async function POST(request: NextRequest) {
   try {
-    // Check admin authorization
-    const adminKey = request.headers.get('x-admin-key');
-    if (adminKey !== process.env.ADMIN_SECRET_KEY) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Check authentication
+    const authError = await requireAuth(request);
+    if (authError) return authError;
 
     const formData = await request.formData();
     const file = formData.get('file') as File;

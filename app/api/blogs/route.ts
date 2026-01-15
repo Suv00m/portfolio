@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllBlogPosts, createBlogPost } from '@/lib/blogs';
 import { CreateBlogPost } from '@/lib/types';
+import { requireAuth } from '@/lib/auth-middleware';
 
 // GET - Fetch all blog posts (public)
 export async function GET() {
@@ -19,14 +20,9 @@ export async function GET() {
 // POST - Create a new blog post (admin only)
 export async function POST(request: NextRequest) {
   try {
-    // Check admin authorization
-    const adminKey = request.headers.get('x-admin-key');
-    if (adminKey !== process.env.ADMIN_SECRET_KEY) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Check authentication
+    const authError = await requireAuth(request);
+    if (authError) return authError;
 
     const body: CreateBlogPost = await request.json();
 

@@ -54,11 +54,20 @@ cd profile
 npm install
 ```
 
+2. Install dependencies:
+```bash
+npm install
+```
+
 3. Set up environment variables:
 Create `.env.local` file:
 ```env
 ADMIN_SECRET_KEY=your-secret-admin-key
 OPENROUTER_API_KEY=your-openrouter-api-key
+GITHUB_TOKEN=your-github-personal-access-token
+GITHUB_OWNER=your-github-username
+GITHUB_REPO=your-repo-name
+PEXELS_API_KEY=your-pexels-api-key
 ```
 
 **Note**: 
@@ -66,6 +75,11 @@ OPENROUTER_API_KEY=your-openrouter-api-key
 - `OPENROUTER_API_KEY` is optional but required for AI features (autocomplete, idea generation, writing assistant)
   - Get your API key from [OpenRouter](https://openrouter.ai/)
   - AI features will be disabled if the key is not set
+- `GITHUB_TOKEN` is required for creating/updating/deleting blog posts on Vercel
+  - Create a Personal Access Token at [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
+  - Give it `repo` scope permissions
+  - For local development, this is optional (filesystem will be used as fallback)
+- `GITHUB_OWNER` and `GITHUB_REPO` are optional (defaults to 'Suv00m' and 'portfolio')
 
 4. Run the development server:
 ```bash
@@ -74,7 +88,10 @@ npm run dev
 
 5. Open [http://localhost:3000](http://localhost:3000)
 
-**Note**: Blog posts are stored as JSON files in the `data/blogs/` directory. When you create posts through the admin panel, they're saved as files that you can commit to GitHub. This makes your blog content version-controlled and easy to manage!
+**Note**: Blog posts are stored as JSON files in the `data/blogs/` directory. 
+- **On Vercel**: Blog posts are created/updated/deleted directly via GitHub API (commits are made automatically)
+- **Local development**: Blog posts are saved to the filesystem (you can commit them manually)
+- This makes your blog content version-controlled and easy to manage!
 
 ## 🗂️ Project Structure
 
@@ -98,7 +115,8 @@ npm run dev
       └── /link-preview.tsx  # Link preview component
 
 /lib
-  ├── blogs.ts         # Blog file operations
+  ├── blogs.ts         # Blog operations (GitHub API or filesystem)
+  ├── github-api.ts    # GitHub API integration for Vercel
   ├── types.ts         # TypeScript interfaces
   ├── utils.ts         # Utility functions
   └── ai-config.ts     # AI/OpenRouter configuration

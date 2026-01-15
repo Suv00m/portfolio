@@ -56,47 +56,59 @@ export default function BlogDirectory() {
             ) : (
               blogPosts.map((post) => (
                 <article key={post.id} className="border-b border-gray-200 pb-8 last:border-b-0">
-                  <div className="mb-4">
-                    <time className="text-sm text-gray-500 font-medium">
-                      {new Date(post.created_at).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long', 
-                        day: 'numeric'
-                      })}
-                    </time>
-                    <h2 className="mt-2 text-xl font-medium font-sans tracking-tight text-black hover:text-purple-600 transition-colors">
-                      <Link href={`/blog/${post.id}`}>
-                        {post.title}
-                      </Link>
-                    </h2>
-                  </div>
-                  <p className="text-gray-700 leading-relaxed line-clamp-3">
+                  <Link href={`/blog/${post.id}`} className="block group">
+                    <div className="flex gap-6">
+                      {post.thumbnail && (
+                        <div className="flex-shrink-0 w-48 h-32 overflow-hidden rounded-lg">
+                          <img 
+                            src={post.thumbnail} 
+                            alt={post.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="mb-4">
+                          <time className="text-sm text-gray-500 font-medium">
+                            {new Date(post.created_at).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long', 
+                              day: 'numeric'
+                            })}
+                          </time>
+                          <h2 className="mt-2 text-xl font-medium font-sans tracking-tight text-black group-hover:text-purple-600 transition-colors">
+                            {post.title}
+                          </h2>
+                        </div>
+                        <p className="text-gray-700 leading-relaxed line-clamp-3">
                     {(() => {
                       // Strip HTML tags for preview
                       const textContent = post.description.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
                       return textContent.length > 200 
                         ? `${textContent.substring(0, 200)}...` 
                         : textContent;
-                    })()}
-                  </p>
-                  {post.links && post.links.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {post.links.slice(0, 3).map((link, index) => (
-                        <p key={index} className="text-sm text-gray-500">
-                          link:&nbsp;
-                        <span key={index} className="text-sm text-purple-600">
-                          {link.text}
-                        </span>
+                        })()}
                         </p>
-                      ))}
-                      {post.links.length > 3 && (
-                        <span className="text-sm text-gray-500">
-                          +{post.links.length - 3} more
-                        </span>
-                      )}
+                        {post.links && post.links.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {post.links.slice(0, 3).map((link, index) => (
+                              <p key={index} className="text-sm text-gray-500">
+                                link:&nbsp;
+                              <span key={index} className="text-sm text-purple-600">
+                                {link.text}
+                              </span>
+                              </p>
+                            ))}
+                            {post.links.length > 3 && (
+                              <span className="text-sm text-gray-500">
+                                +{post.links.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  
+                  </Link>
                 </article>
               ))
             )}

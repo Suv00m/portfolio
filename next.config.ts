@@ -7,6 +7,11 @@ const nextConfig = {
         hostname: 'api.microlink.io',
         pathname: '**',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.pexels.com',
+        pathname: '**',
+      },
     ],
   },
 };

@@ -5,6 +5,7 @@ import Link from "next/link";
 import CenterNavbar from "@/components/CenterNavbar";
 import RichTextEditor from "@/components/RichTextEditor";
 import IdeaBox from "@/components/IdeaBox";
+import ImagePicker from "@/components/ImagePicker";
 import { BlogPost, BlogLink } from "@/lib/types";
 import { processEmbedContent } from "@/lib/embed-utils";
 import { initializeCopyButtons } from "@/lib/code-copy-utils";
@@ -12,22 +13,47 @@ import { initializeCopyButtons } from "@/lib/code-copy-utils";
 export default function AdminDashboard() {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState<string | null>(null); // Track which post is being edited
   const [isPreview, setIsPreview] = useState(false);
   const [adminKey, setAdminKey] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loginError, setLoginError] = useState("");
   const [newPost, setNewPost] = useState({
     title: "",
     description: "",
+    thumbnail: "",
     links: [] as BlogLink[]
   });
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
+  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+  const [showImagePicker, setShowImagePicker] = useState(false);
   const [newLink, setNewLink] = useState({ text: "", url: "" });
   const previewContentRef = useRef<HTMLDivElement>(null);
+
+  // Check authentication status on mount
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchBlogs();
     }
   }, [isAuthenticated]);
+
+  const checkAuth = async () => {
+    try {
+      const response = await fetch('/api/auth/verify');
+      const result = await response.json();
+      setIsAuthenticated(result.authenticated || false);
+    } catch (error) {
+      console.error('Error checking auth:', error);
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Initialize copy buttons in preview when content changes
   useEffect(() => {
@@ -48,11 +74,49 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleAuth = (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In production, verify this properly
-    if (adminKey) {
-      setIsAuthenticated(true);
+    setLoginError("");
+    
+    if (!adminKey.trim()) {
+      setLoginError("Please enter an admin key");
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ adminKey }),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setIsAuthenticated(true);
+        setAdminKey(""); // Clear the input
+      } else {
+        if (response.status === 429) {
+          setLoginError(`Too many attempts. Try again in ${Math.ceil((result.retryAfter || 0) / 60)} minutes.`);
+        } else {
+          setLoginError(result.error || 'Invalid admin key');
+        }
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setLoginError('Failed to login. Please try again.');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setIsAuthenticated(false);
+      setBlogPosts([]);
+    } catch (error) {
+      console.error('Logout error:', error);
     }
   };
 
@@ -65,16 +129,18 @@ export default function AdminDashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-key': adminKey
         },
+        credentials: 'include', // Include cookies
         body: JSON.stringify(newPost)
       });
 
       const result = await response.json();
       if (result.success) {
         await fetchBlogs();
-        setNewPost({ title: "", description: "", links: [] });
+        setNewPost({ title: "", description: "", thumbnail: "", links: [] });
+        setThumbnailPreview("");
         setIsCreating(false);
+        setIsPreview(false);
       } else {
         alert('Error: ' + result.error);
       }
@@ -84,15 +150,111 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleEditPost = (post: BlogPost) => {
+    setNewPost({
+      title: post.title,
+      description: post.description,
+      thumbnail: post.thumbnail || "",
+      links: post.links || []
+    });
+    setThumbnailPreview(post.thumbnail || "");
+    setIsEditing(post.id);
+    setIsCreating(true);
+    setIsPreview(false);
+    // Scroll to top of form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleUpdatePost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isEditing || !newPost.title.trim() || !newPost.description.trim()) return;
+
+    try {
+      const response = await fetch(`/api/blogs/${isEditing}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(newPost)
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        await fetchBlogs();
+        setNewPost({ title: "", description: "", thumbnail: "", links: [] });
+        setThumbnailPreview("");
+        setIsCreating(false);
+        setIsEditing(null);
+        setIsPreview(false);
+        alert('Blog post updated successfully!');
+      } else {
+        alert('Error: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error updating blog:', error);
+      alert('Failed to update blog post');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setNewPost({ title: "", description: "", thumbnail: "", links: [] });
+    setThumbnailPreview("");
+    setIsCreating(false);
+    setIsEditing(null);
+    setIsPreview(false);
+  };
+
+  const handleThumbnailUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('File must be an image');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    setIsUploadingThumbnail(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setNewPost({ ...newPost, thumbnail: result.url });
+        setThumbnailPreview(result.url);
+      } else {
+        alert('Failed to upload thumbnail: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error uploading thumbnail:', error);
+      alert('Failed to upload thumbnail');
+    } finally {
+      setIsUploadingThumbnail(false);
+      event.target.value = '';
+    }
+  };
+
   const handleDeletePost = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this blog post?")) return;
 
     try {
       const response = await fetch(`/api/blogs/${id}`, {
         method: 'DELETE',
-        headers: {
-          'x-admin-key': adminKey
-        }
+        credentials: 'include', // Include cookies
       });
 
       const result = await response.json();
@@ -124,6 +286,19 @@ export default function AdminDashboard() {
     });
   };
 
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-white text-black">
+        <CenterNavbar />
+        <section className="flex min-h-screen flex-col items-center justify-center px-6 py-20">
+          <div className="max-w-md w-full text-left">
+            <p className="text-lg text-gray-600">Checking authentication...</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <main className="min-h-screen bg-white text-black">
@@ -151,11 +326,17 @@ export default function AdminDashboard() {
                   type="password"
                   id="adminKey"
                   value={adminKey}
-                  onChange={(e) => setAdminKey(e.target.value)}
+                  onChange={(e) => {
+                    setAdminKey(e.target.value);
+                    setLoginError("");
+                  }}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
                   placeholder="Enter admin key..."
                   required
                 />
+                {loginError && (
+                  <p className="mt-2 text-sm text-red-600">{loginError}</p>
+                )}
               </div>
               <button
                 type="submit"
@@ -174,6 +355,18 @@ export default function AdminDashboard() {
     <main className="min-h-screen bg-white text-black">
       <CenterNavbar />
       
+      {showImagePicker && (
+        <ImagePicker
+          onSelect={(imageUrl) => {
+            setNewPost({ ...newPost, thumbnail: imageUrl });
+            setThumbnailPreview(imageUrl);
+            setShowImagePicker(false);
+          }}
+          currentImage={newPost.thumbnail}
+          onClose={() => setShowImagePicker(false)}
+        />
+      )}
+      
       <section className="flex min-h-screen flex-col items-center justify-center px-6 py-20">
         <div className="max-w-4xl text-left w-full">
           <div className="mb-8">
@@ -189,14 +382,27 @@ export default function AdminDashboard() {
           </div>
 
           <div className="mb-16 space-y-6 text-base leading-relaxed text-gray-600 md:text-lg text-left max-w-2xl text-gray-800">
-            <div className="border-b border-gray-200 pb-8">
-              <h2 className="text-2xl font-medium font-sans tracking-tight text-black mb-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-medium font-sans tracking-tight text-black">
                 Blog Management
               </h2>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+            <div className="border-b border-gray-200 pb-8">
               
               {!isCreating ? (
                 <button
-                  onClick={() => setIsCreating(true)}
+                  onClick={() => {
+                    setIsCreating(true);
+                    setIsEditing(null);
+                    setNewPost({ title: "", description: "", thumbnail: "", links: [] });
+                    setThumbnailPreview("");
+                  }}
                   className="inline-flex items-center px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
                 >
                   + Create New Blog Post
@@ -206,15 +412,26 @@ export default function AdminDashboard() {
                   {/* Preview/Edit Toggle */}
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium text-gray-700">
-                      {isPreview ? 'Preview' : 'Edit'}
+                      {isEditing ? 'Edit Blog Post' : isPreview ? 'Preview' : 'Create New Post'}
                     </h3>
-                    <button
-                      type="button"
-                      onClick={() => setIsPreview(!isPreview)}
-                      className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
-                    >
-                      {isPreview ? '✏️ Edit' : '👁️ Preview'}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsPreview(!isPreview)}
+                        className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
+                      >
+                        {isPreview ? '✏️ Edit' : '👁️ Preview'}
+                      </button>
+                      {isEditing && (
+                        <button
+                          type="button"
+                          onClick={handleCancelEdit}
+                          className="px-4 py-2 bg-gray-400 text-white text-sm font-medium rounded-lg hover:bg-gray-500 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Idea Box */}
@@ -253,6 +470,16 @@ export default function AdminDashboard() {
                               {newPost.title}
                             </h1>
                           </div>
+
+                          {newPost.thumbnail && (
+                            <div className="mb-8">
+                              <img 
+                                src={newPost.thumbnail} 
+                                alt={newPost.title}
+                                className="w-full h-64 object-cover rounded-lg"
+                              />
+                            </div>
+                          )}
 
                           <div className="mb-16 space-y-6 text-base leading-relaxed text-gray-600 md:text-lg text-left max-w-2xl text-gray-800">
                             {newPost.description ? (
@@ -298,7 +525,7 @@ export default function AdminDashboard() {
                     </div>
                   ) : (
                     /* Edit Mode */
-                    <form onSubmit={handleCreatePost} className="space-y-4">
+                    <form onSubmit={isEditing ? handleUpdatePost : handleCreatePost} className="space-y-4">
                       <div>
                         <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
                           Blog Title
@@ -313,6 +540,56 @@ export default function AdminDashboard() {
                           required
                         />
                       </div>
+
+                      <div>
+                        <label htmlFor="thumbnail" className="block text-sm font-medium text-gray-700 mb-2">
+                          Thumbnail Image (Optional)
+                        </label>
+                        {thumbnailPreview && (
+                          <div className="mb-3">
+                            <img 
+                              src={thumbnailPreview} 
+                              alt="Thumbnail preview" 
+                              className="w-full max-w-md h-48 object-cover rounded-lg border border-gray-300"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setNewPost({ ...newPost, thumbnail: "" });
+                                setThumbnailPreview("");
+                              }}
+                              className="mt-2 text-sm text-red-600 hover:text-red-800"
+                            >
+                              Remove thumbnail
+                            </button>
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setShowImagePicker(true)}
+                            className="flex-1 px-4 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                          >
+                            📷 Search from Pexels
+                          </button>
+                          <label className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors cursor-pointer text-center">
+                            📤 Upload Image
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleThumbnailUpload}
+                              disabled={isUploadingThumbnail}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+                        {isUploadingThumbnail && (
+                          <p className="mt-2 text-sm text-gray-500">Uploading...</p>
+                        )}
+                        <p className="mt-2 text-xs text-gray-500">
+                          Search from millions of free images on Pexels or upload your own. Recommended: 1200x630px or 16:9 aspect ratio.
+                        </p>
+                      </div>
                       
                       <div>
                         <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
@@ -322,7 +599,6 @@ export default function AdminDashboard() {
                           content={newPost.description}
                           onChange={(content) => setNewPost({ ...newPost, description: content })}
                           placeholder="Start writing your blog post... Use the toolbar to format text, add images, links, code blocks, and more!"
-                          adminKey={adminKey}
                         />
                       </div>
 
@@ -374,15 +650,11 @@ export default function AdminDashboard() {
                           type="submit"
                           className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
                         >
-                          Create Post
+                          {isEditing ? 'Update Post' : 'Create Post'}
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            setIsCreating(false);
-                            setIsPreview(false);
-                            setNewPost({ title: "", description: "", links: [] });
-                          }}
+                          onClick={handleCancelEdit}
                           className="px-6 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors"
                         >
                           Cancel
@@ -418,12 +690,20 @@ export default function AdminDashboard() {
                             {post.title}
                           </h4>
                         </div>
-                        <button
-                          onClick={() => handleDeletePost(post.id)}
-                          className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
-                        >
-                          Delete
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditPost(post)}
+                            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeletePost(post.id)}
+                            className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                       <p className="text-gray-700 leading-relaxed text-base line-clamp-3">
                         {(() => {

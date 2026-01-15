@@ -14,14 +14,12 @@ interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
   placeholder?: string;
-  adminKey?: string;
 }
 
 export default function RichTextEditor({
   content,
   onChange,
   placeholder = 'Start writing...',
-  adminKey = '',
 }: RichTextEditorProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<string>('');
@@ -134,9 +132,7 @@ export default function RichTextEditor({
 
       const response = await fetch('/api/upload', {
         method: 'POST',
-        headers: {
-          'x-admin-key': adminKey,
-        },
+        credentials: 'include', // Include cookies for authentication
         body: formData,
       });
 
