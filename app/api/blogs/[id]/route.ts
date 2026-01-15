@@ -67,6 +67,7 @@ export async function PUT(
     const data = await updateBlogPost(id, {
       title: body.title,
       description: body.description,
+      thumbnail: body.thumbnail,
       links: body.links || [],
     });
 
