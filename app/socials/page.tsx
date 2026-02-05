@@ -15,7 +15,7 @@ const socials = [
   {
     platform: "X (Twitter)",
     description: "Quick thoughts, tech updates, and industry insights.",
-    url: "https://x.com/00_shuv_00",
+    url: "https://x.com/shuvx_",
     handle: "@00_shuv_00",
     color: "#0a0a0a"
   },
@@ -62,7 +62,7 @@ export default function Socials() {
             <h1 className="font-display text-5xl md:text-7xl font-black tracking-tighter">
               SOCIAL LINKS
             </h1>
-            <p className="mt-6 text-xl text-[#525252] max-w-xl">
+            <p className="mt-6 text3xl text-[#525252] max-w-xl">
               Connect with me across different platforms where I share my work, thoughts, and projects.
             </p>
           </div>
@@ -109,10 +109,10 @@ export default function Socials() {
                 For business inquiries, collaborations, or just to say hello.
               </p>
               <a
-                href="mailto:shuvammandal121@gmail.com"
+                href="mailto:shuvammandal131@gmail.com"
                 className="inline-flex items-center gap-2 font-mono font-semibold text-[#ff3d00] hover:text-white transition-colors duration-200 group"
               >
-                <span>shuvammandal121@gmail.com</span>
+                <span>shuvammandal131@gmail.com</span>
                 <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                   <path strokeLinecap="square" strokeLinejoin="miter" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
