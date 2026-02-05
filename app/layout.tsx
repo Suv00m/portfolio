@@ -1,16 +1,24 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Unbounded, Syne, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import PrismLoader from "@/components/PrismLoader";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const unbounded = Unbounded({
+  variable: "--font-display",
   subsets: ["latin"],
   display: "swap",
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const syne = Syne({
+  variable: "--font-sans",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
   display: "swap",
 });
@@ -31,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${unbounded.variable} ${syne.variable} ${jetbrainsMono.variable} antialiased`}
       >
         <PrismLoader />
         {children}

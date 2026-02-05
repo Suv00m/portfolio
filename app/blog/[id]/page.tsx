@@ -22,7 +22,6 @@ export default function SingleBlog() {
     }
   }, [params.id]);
 
-  // Initialize copy buttons after content is rendered
   useEffect(() => {
     if (blogPost?.description && contentRef.current) {
       initializeCopyButtons(contentRef.current);
@@ -45,11 +44,13 @@ export default function SingleBlog() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-white text-black">
+      <main className="min-h-screen bg-white text-[#0a0a0a]">
         <CenterNavbar />
         <section className="flex min-h-screen flex-col items-center justify-center px-6 py-20">
-          <div className="max-w-4xl text-left">
-            <p className="text-lg text-gray-600">Loading...</p>
+          <div className="flex items-center gap-4">
+            <div className="loading-dot" />
+            <div className="loading-dot" />
+            <div className="loading-dot" />
           </div>
         </section>
       </main>
@@ -58,42 +59,33 @@ export default function SingleBlog() {
 
   if (!blogPost) {
     return (
-      <main className="min-h-screen bg-white text-black">
+      <main className="min-h-screen bg-white text-[#0a0a0a]">
         <CenterNavbar />
         <section className="flex min-h-screen flex-col items-center justify-center px-6 py-20">
-          <div className="max-w-4xl text-left">
-            <h1 className="mt-6 text-4xl font-medium font-sans tracking-tight">
-              {new Date().toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: '2-digit', 
-                day: '2-digit' 
-              }).replace(/\//g, '.')}
-              <br />
-              Blog Post Not Found
+          <div className="max-w-4xl text-center">
+            <h1 className="font-display text-6xl md:text-8xl font-black tracking-tighter mb-8">
+              404
             </h1>
-            <div className="mb-16 space-y-6 text-base leading-relaxed text-gray-600 md:text-lg text-left max-w-2xl text-gray-800 mt-8">
-              <p>
-                Sorry, the blog post you&apos;re looking for doesn&apos;t exist or has been removed.
-              </p>
-              <Link 
-                href="/blog"
-                className="inline-block text-purple-600 hover:text-purple-800 font-medium underline underline-offset-2 transition-colors"
-              >
-                ← Back to Blog Directory
-              </Link>
-            </div>
+            <p className="text-xl text-[#525252] mb-8">
+              This post doesn&apos;t exist or has been removed.
+            </p>
+            <Link href="/blog" className="btn-brutal-outline">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="square" strokeLinejoin="miter" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+              </svg>
+              Back to Blog
+            </Link>
           </div>
         </section>
       </main>
     );
   }
 
-  // Render HTML content from rich text editor
   const renderDescription = (htmlContent: string) => {
     return (
       <div
         ref={contentRef}
-        className="prose prose-lg max-w-none prose-headings:font-sans prose-headings:tracking-tight prose-p:text-gray-800 prose-p:leading-relaxed prose-a:text-purple-600 prose-a:no-underline hover:prose-a:text-purple-800 prose-strong:text-black prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-gray-100 prose-pre:border prose-pre:border-gray-200 prose-pre:overflow-x-auto prose-pre:whitespace-pre prose-pre:word-wrap-normal prose-pre:word-break-normal prose-img:rounded-lg prose-img:my-4 [&_iframe]:w-full [&_iframe]:rounded-lg [&_iframe]:aspect-video [&_iframe]:h-[400px] [&_iframe]:my-4 [&_iframe]:border-0 [&_.embed-container]:my-4 [&_pre_code]:whitespace-pre [&_pre_code]:overflow-x-auto [&_pre_code]:block"
+        className="prose prose-lg max-w-none prose-headings:font-display prose-headings:font-bold prose-headings:tracking-tight prose-p:text-zinc-600 prose-p:leading-relaxed prose-a:text-blue-600 prose-a:underline hover:prose-a:text-orange-500 prose-strong:text-zinc-900 prose-code:bg-zinc-100 prose-code:text-zinc-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none prose-img:rounded-lg prose-blockquote:border-zinc-200 prose-blockquote:text-zinc-600 prose-li:marker:text-orange-500 [&_iframe]:w-full [&_iframe]:rounded-lg [&_iframe]:aspect-video [&_iframe]:my-8 [&_h2]:text-zinc-900 [&_h3]:text-orange-500"
         dangerouslySetInnerHTML={{ __html: processEmbedContent(htmlContent) }}
         suppressHydrationWarning
       />
@@ -101,79 +93,113 @@ export default function SingleBlog() {
   };
 
   return (
-    <main className="min-h-screen bg-white text-black">
+    <main className="min-h-screen bg-white text-[#0a0a0a]">
       <CenterNavbar />
-      
+
       {/* Single Blog Section */}
-      <section className="flex min-h-screen flex-col items-center justify-center px-6 py-20">
-        <div className="max-w-4xl text-left">
-          {/* Date and Title */}
-          <div className="mb-8">
-            <time className="text-sm text-gray-500 font-medium">
-              {new Date(blogPost.created_at).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-              })}
-            </time>
-            <h1 className="mt-6 text-4xl font-medium font-sans tracking-tight">
+      <section className="relative px-6 md:px-12 lg:px-24 py-32">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-dots opacity-10" />
+
+        {/* Decorative shape */}
+        <div className="absolute top-32 right-0 w-64 h-64 bg-[#ff3d00] -rotate-12 translate-x-1/2 hidden lg:block" />
+
+        <article className="relative z-10 max-w-4xl mx-auto">
+          {/* Header */}
+          <header className="mb-12">
+            {/* Back Link and Date */}
+            <div className="flex items-center justify-between mb-8">
+              <Link
+                href="/blog"
+                className="inline-flex items-center gap-2 font-display font-bold uppercase tracking-wider text-[#737373] hover:text-[#ff3d00] transition-colors duration-200 group"
+              >
+                <svg className="w-4 h-4 transform group-hover:-translate-x-2 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+                </svg>
+                Back to Blog
+              </Link>
+
+              <time className="tag-brutal-accent">
+                {new Date(blogPost.created_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </time>
+            </div>
+
+            {/* Title */}
+            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter leading-[1.1]">
               {blogPost.title}
             </h1>
-          </div>
+          </header>
 
           {/* Thumbnail */}
           {blogPost.thumbnail && (
-            <div className="mb-8">
-              <img 
-                src={blogPost.thumbnail} 
+            <div className="mb-12 stacked-image">
+              <img
+                src={blogPost.thumbnail}
                 alt={blogPost.title}
-                className="w-full h-96 object-cover rounded-lg"
+                className="w-full h-80 md:h-[500px] object-cover border-3 border-[#0a0a0a]"
+                style={{ borderWidth: '3px' }}
               />
             </div>
           )}
 
           {/* Blog Content */}
-            <div className="mb-16 space-y-6 text-base leading-relaxed text-gray-600 md:text-lg text-left max-w-2xl text-gray-800">
-              {renderDescription(blogPost.description)}
-
-            {/* Related Links Section */}
-            {blogPost.links && blogPost.links.length > 0 && (
-              <div className="mt-12 pt-8 border-t border-gray-200">
-                <h2 className="text-xl font-medium font-sans tracking-tight text-black mb-4">
-                  Related Links
-                </h2>
-                <div className="space-y-3">
-                  {blogPost.links.map((link, index) => (
-                    <div key={index}>
-                      <LinkPreview
-                        url={link.url}
-                        className="text-purple-600 hover:text-purple-800 font-medium underline underline-offset-2"
-                      >
-                        {link.text} →
-                      </LinkPreview>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+          <div className="mb-16">
+            {renderDescription(blogPost.description)}
           </div>
+
+          {/* Related Links Section */}
+          {blogPost.links && blogPost.links.length > 0 && (
+            <div className="mt-16 pt-8 border-t-4 border-[#0a0a0a]">
+              <h2 className="font-display text-2xl font-bold tracking-tight mb-6">
+                Related Links
+              </h2>
+              <div className="grid gap-4">
+                {blogPost.links.map((link, index) => (
+                  <div
+                    key={index}
+                    className="group card-brutal p-4"
+                  >
+                    <LinkPreview
+                      url={link.url}
+                      className="flex items-center justify-between font-semibold text-[#0066ff] hover:text-[#ff3d00] transition-colors duration-200"
+                    >
+                      <span>{link.text}</span>
+                      <svg className="w-5 h-5 transform group-hover:translate-x-2 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="square" strokeLinejoin="miter" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </LinkPreview>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Navigation Links */}
-          <div className="flex justify-between items-center mt-12 pt-8 border-t border-gray-200 gap-x-10">
-            <Link 
+          <div className="flex justify-between items-center mt-16 pt-8 border-t-4 border-[#0a0a0a]">
+            <Link
               href="/blog"
-              className="text-purple-600 hover:text-purple-800 font-medium underline underline-offset-2 transition-colors"
+              className="inline-flex items-center gap-2 font-display font-bold uppercase tracking-wider text-[#525252] hover:text-[#ff3d00] transition-colors duration-200 group"
             >
-              ← Blog Directory
+              <svg className="w-5 h-5 transform group-hover:-translate-x-2 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="square" strokeLinejoin="miter" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+              </svg>
+              Blog Directory
             </Link>
-            <Link 
+            <Link
               href="/"
-              className="text-purple-600 hover:text-purple-800 font-medium underline underline-offset-2 transition-colors"
+              className="inline-flex items-center gap-2 font-display font-bold uppercase tracking-wider text-[#525252] hover:text-[#0066ff] transition-colors duration-200 group"
             >
-              Home →
+              Home
+              <svg className="w-5 h-5 transform group-hover:translate-x-2 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="square" strokeLinejoin="miter" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
             </Link>
           </div>
-        </div>
+        </article>
       </section>
     </main>
   );

@@ -10,10 +10,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: "Home", href: "/", description: "Back to home" },
-  { label: "Blog", href: "/blog", description: "Read my blog" },
-  { label: "Socials", href: "/socials", description: "Connect with me" },
-  { label: "Contact", href: "/contact", description: "Schedule a call" },
+  { label: "Home", href: "/", description: "Back to base" },
+  { label: "Services", href: "/services", description: "What I build" },
+  { label: "Blog", href: "/blog", description: "Thoughts & code" },
+  { label: "Socials", href: "/socials", description: "Find me online" },
+  { label: "Contact", href: "/contact", description: "Let's talk" },
 ];
 
 export default function CenterNavbar() {
@@ -23,34 +24,37 @@ export default function CenterNavbar() {
   return (
     <>
       {/* Navbar Container */}
-      <nav className="fixed right-4 top-4 z-50 md:right-8 md:top-1/3 md:-translate-y-1/2">
+      <nav className="fixed right-4 top-4 z-50 md:right-8 md:top-8">
         {/* Toggle Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            "group relative flex h-12 w-12 items-center justify-center rounded-full border border-gray-200 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:border-gray-400 hover:shadow-lg",
-            isOpen && "border-gray-400 shadow-lg"
+            "group relative flex h-14 w-14 items-center justify-center border-3 border-[#0a0a0a] bg-white transition-all duration-200",
+            isOpen
+              ? "shadow-brutal-accent"
+              : "shadow-brutal-sm hover:shadow-brutal hover:-translate-x-1 hover:-translate-y-1"
           )}
+          style={{ borderWidth: '3px' }}
           aria-label="Toggle navigation menu"
         >
           {/* Hamburger Icon */}
-          <div className="flex h-4 w-4 flex-col justify-between">
+          <div className="flex h-5 w-5 flex-col justify-between">
             <span
               className={cn(
-                "h-0.5 w-full bg-gray-700 transition-all duration-300",
-                isOpen ? "translate-y-1.5 rotate-45" : ""
+                "h-[3px] w-full bg-[#0a0a0a] transition-all duration-200",
+                isOpen && "translate-y-[9px] rotate-45 bg-[#ff3d00]"
               )}
             />
             <span
               className={cn(
-                "h-0.5 w-full bg-gray-700 transition-all duration-300",
-                isOpen ? "opacity-0" : ""
+                "h-[3px] w-full bg-[#0a0a0a] transition-all duration-200",
+                isOpen && "opacity-0"
               )}
             />
             <span
               className={cn(
-                "h-0.5 w-full bg-gray-700 transition-all duration-300",
-                isOpen ? "-translate-y-1.5 -rotate-45" : ""
+                "h-[3px] w-full bg-[#0a0a0a] transition-all duration-200",
+                isOpen && "-translate-y-[9px] -rotate-45 bg-[#ff3d00]"
               )}
             />
           </div>
@@ -59,16 +63,18 @@ export default function CenterNavbar() {
         {/* Navigation Menu */}
         <div
           className={cn(
-            "absolute right-0 top-0 overflow-hidden rounded-2xl border border-gray-200 bg-white/90 backdrop-blur-sm shadow-xl transition-all duration-500 ease-out",
-            "md:right-0 md:top-0",
+            "absolute right-0 top-0 overflow-hidden border-3 border-[#0a0a0a] bg-white transition-all duration-300 ease-out",
             isOpen
-              ? "w-64 opacity-100 -translate-x-0 translate-y-0 md:-translate-x-0 md:translate-y-0"
-              : "w-12 opacity-0 translate-x-2 translate-y-2 md:translate-x-2 md:-translate-y-2 pointer-events-none"
+              ? "w-72 opacity-100 translate-x-0 translate-y-0 shadow-brutal-lg"
+              : "w-14 opacity-0 translate-x-2 -translate-y-2 pointer-events-none"
           )}
+          style={{ borderWidth: '3px' }}
         >
           {/* Header */}
-          <div className="border-b border-gray-100 p-4">
-            <h3 className="text-sm font-semibold text-gray-900">Navigation</h3>
+          <div className="border-b-3 border-[#0a0a0a] p-5 bg-[#0a0a0a]" style={{ borderBottomWidth: '3px' }}>
+            <h3 className="font-display text-lg font-black tracking-tight text-white uppercase">
+              Navigate
+            </h3>
           </div>
 
           {/* Navigation Items */}
@@ -81,21 +87,31 @@ export default function CenterNavbar() {
                 onMouseEnter={() => setHoveredItem(item.label)}
                 onMouseLeave={() => setHoveredItem(null)}
                 className={cn(
-                  "group relative flex w-full items-center justify-between rounded-lg p-3 text-left transition-all duration-200",
-                  "hover:bg-gray-50 hover:text-gray-900",
-                  "focus:outline-none focus:ring-2 focus:ring-gray-200"
+                  "group relative flex w-full items-center justify-between p-4 text-left transition-all duration-200",
+                  "hover:bg-[#f5f5f5]",
+                  "focus:outline-none focus:bg-[#f5f5f5]"
                 )}
                 style={{
-                  transitionDelay: isOpen ? `${index * 50}ms` : "0ms",
+                  transitionDelay: isOpen ? `${index * 40}ms` : "0ms",
                 }}
               >
                 {/* Content */}
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className={cn(
+                    "font-display text-base font-bold uppercase tracking-wide transition-all duration-200",
+                    hoveredItem === item.label
+                      ? "text-[#ff3d00]"
+                      : "text-[#0a0a0a]"
+                  )}>
                     {item.label}
                   </span>
                   {item.description && (
-                    <span className="text-xs text-gray-500">
+                    <span className={cn(
+                      "font-mono text-xs transition-all duration-200 mt-0.5",
+                      hoveredItem === item.label
+                        ? "text-[#0a0a0a]"
+                        : "text-[#737373]"
+                    )}>
                       {item.description}
                     </span>
                   )}
@@ -104,42 +120,45 @@ export default function CenterNavbar() {
                 {/* Arrow Icon */}
                 <svg
                   className={cn(
-                    "h-4 w-4 text-gray-400 transition-all duration-200",
+                    "h-5 w-5 transition-all duration-200",
                     hoveredItem === item.label
-                      ? "translate-x-1 text-gray-600"
-                      : ""
+                      ? "translate-x-1 text-[#ff3d00]"
+                      : "text-[#a3a3a3]"
                   )}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
+                  strokeWidth={3}
                 >
                   <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
+                    strokeLinecap="square"
+                    strokeLinejoin="miter"
                     d="M9 5l7 7-7 7"
                   />
                 </svg>
 
-                {/* Hover Background */}
+                {/* Hover Indicator Bar */}
                 <div
                   className={cn(
-                    "absolute inset-0 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 opacity-0 transition-opacity duration-200",
-                    hoveredItem === item.label ? "opacity-100" : ""
+                    "absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-[#ff3d00] transition-all duration-200",
+                    hoveredItem === item.label
+                      ? "opacity-100"
+                      : "opacity-0"
                   )}
-                  style={{ zIndex: -1 }}
                 />
               </a>
             ))}
           </div>
 
           {/* Footer */}
-          <div className="border-t border-gray-100 p-4">
+          <div className="border-t-3 border-[#0a0a0a] p-4 bg-[#f5f5f5]" style={{ borderTopWidth: '3px' }}>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500">Portfolio 2025</span>
-              <div className="flex space-x-1">
-                <div className="h-2 w-2 mt-0.5 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-xs text-gray-500">Online</span>
+              <span className="font-mono text-xs text-[#737373] uppercase tracking-wider">2025</span>
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <div className="h-3 w-3 bg-[#22c55e] border-2 border-[#0a0a0a]" />
+                </div>
+                <span className="font-mono text-xs font-bold text-[#0a0a0a] uppercase tracking-wider">Live</span>
               </div>
             </div>
           </div>
@@ -149,7 +168,7 @@ export default function CenterNavbar() {
       {/* Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/10 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-white/80"
           onClick={() => setIsOpen(false)}
         />
       )}

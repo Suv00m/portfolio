@@ -40,11 +40,12 @@ export default function Contact() {
 
     (window as any).Cal.ns["30min"]("inline", {
       elementOrSelector: "#my-cal-inline-30min",
-      config: { layout: "month_view" },
+      config: { layout: "month_view", theme: "light" },
       calLink: "shuvam-mandal/30min",
     });
 
     (window as any).Cal.ns["30min"]("ui", {
+      theme: "light",
       hideEventTypeDetails: false,
       layout: "month_view"
     });
@@ -52,43 +53,51 @@ export default function Contact() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-white text-black">
+    <main className="min-h-screen bg-white text-[#0a0a0a]">
       <CenterNavbar />
-      
+
       {/* Contact Section */}
-      <section className="flex min-h-screen flex-col items-center justify-center px-6 py-20">
-        <div className="max-w-4xl text-left w-full">
-          {/* Date and Title */}
-          <div className="mb-8">
-            <h1 className="mt-6 text-3xl font-medium font-sans tracking-tight">
-              {new Date().toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: '2-digit', 
-                day: '2-digit' 
+      <section className="relative min-h-screen px-6 md:px-12 lg:px-24 py-32">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-dots opacity-20" />
+
+        {/* Decorative shapes */}
+        <div className="absolute top-32 right-0 w-48 h-48 bg-[#ff3d00] -rotate-12 translate-x-1/2" />
+        <div className="absolute bottom-32 left-0 w-32 h-32 bg-[#0066ff] rotate-12 -translate-x-1/2" />
+
+        <div className="relative z-10 max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="mb-12">
+            <span className="tag-brutal-filled mb-6 inline-block">
+              {new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
               }).replace(/\//g, '.')}
-              <br />
-              Let&apos;s Connect
+            </span>
+            <h1 className="font-display text-5xl md:text-7xl font-black tracking-tighter">
+              LET&apos;S CONNECT
             </h1>
           </div>
 
           {/* Description */}
-          <div className="mb-16 space-y-6 text-base leading-relaxed text-gray-600 md:text-lg text-left max-w-2xl text-gray-800">
-            <p>
-              I&apos;m always open to discussing new projects, creative ideas, or opportunities to be part of your vision. 
+          <div className="mb-16 space-y-6 max-w-2xl">
+            <p className="text-lg md:text-xl leading-relaxed text-[#525252]">
+              I&apos;m always open to discussing new projects, creative ideas, or opportunities to be part of your vision.
               Schedule a 30-minute call with me below, and let&apos;s explore how we can work together.
             </p>
-            <p>
-              Whether you want to talk about building something amazing, need help with a project, 
+            <p className="text-lg leading-relaxed text-[#525252]">
+              Whether you want to talk about building something amazing, need help with a project,
               or just want to connect, I&apos;d love to hear from you.
             </p>
           </div>
 
           {/* Cal.com Embed */}
-          <div className="mb-16 w-full">
-            <div 
-              id="my-cal-inline-30min" 
-              className="w-full rounded-lg border border-gray-200 bg-white shadow-sm"
-              style={{ 
+          <div className="mb-16 w-full card-brutal overflow-hidden">
+            <div
+              id="my-cal-inline-30min"
+              className="w-full bg-white"
+              style={{
                 minHeight: "700px",
                 overflow: "auto"
               }}
@@ -96,26 +105,48 @@ export default function Contact() {
           </div>
 
           {/* Additional Contact Info */}
-          <div className="mt-12 pt-8 border-t border-gray-200">
-            <div className="space-y-4 text-base text-gray-600">
-              <p>
-                <span className="font-medium text-gray-900">Prefer email?</span>
-                <br />
-                Reach out directly and I&apos;ll get back to you within 24 hours.
-              </p>
-              <p className="text-gray-500 text-base">
-                You can also find me on LinkedIn, Twitter, or GitHub. Let&apos;s create something amazing together.
-              </p>
+          <div className="mt-16 pt-8 border-t-4 border-[#0a0a0a]">
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="card-brutal p-6">
+                <h3 className="font-display font-bold text-lg mb-3">Prefer email?</h3>
+                <p className="text-[#525252] mb-4">
+                  Reach out directly and I&apos;ll get back to you within 24 hours.
+                </p>
+                <a
+                  href="mailto:shuvammandal121@gmail.com"
+                  className="font-mono text-[#0066ff] hover:text-[#ff3d00] font-semibold transition-colors"
+                >
+                  shuvammandal121@gmail.com
+                </a>
+              </div>
+              <div className="card-brutal p-6">
+                <h3 className="font-display font-bold text-lg mb-3">Find me online</h3>
+                <p className="text-[#525252] mb-4">
+                  Connect on LinkedIn, Twitter, or GitHub to see what I&apos;m working on.
+                </p>
+                <Link
+                  href="/socials"
+                  className="inline-flex items-center gap-2 font-display font-bold text-[#ff3d00] hover:text-[#0066ff] transition-colors"
+                >
+                  View all socials
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="square" strokeLinejoin="miter" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+              </div>
             </div>
           </div>
 
           {/* Back to Home Link */}
-          <div className="mt-12">
-            <Link 
+          <div className="mt-16 pt-8 border-t-4 border-[#0a0a0a]">
+            <Link
               href="/"
-              className="text-purple-600 hover:text-purple-800 font-medium underline underline-offset-2 transition-colors"
+              className="inline-flex items-center gap-3 font-display font-bold uppercase tracking-wider text-[#525252] hover:text-[#ff3d00] transition-colors duration-200 group"
             >
-              ← Back to Home
+              <svg className="w-5 h-5 transform group-hover:-translate-x-2 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="square" strokeLinejoin="miter" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+              </svg>
+              Back to Home
             </Link>
           </div>
         </div>
