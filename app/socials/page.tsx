@@ -16,7 +16,7 @@ const socials = [
     platform: "X (Twitter)",
     description: "Quick thoughts, tech updates, and industry insights.",
     url: "https://x.com/shuvx_",
-    handle: "@00_shuv_00",
+    handle: "@shuvx_",
     color: "#0a0a0a"
   },
   {
