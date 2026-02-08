@@ -153,7 +153,7 @@ export default function CenterNavbar() {
           {/* Footer */}
           <div className="border-t-3 border-[#0a0a0a] p-4 bg-[#f5f5f5]" style={{ borderTopWidth: '3px' }}>
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs text-[#737373] uppercase tracking-wider">2025</span>
+              <span className="font-mono text-xs text-[#737373] uppercase tracking-wider">{new Date().getFullYear()}</span>
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <div className="h-3 w-3 bg-[#22c55e] border-2 border-[#0a0a0a]" />
