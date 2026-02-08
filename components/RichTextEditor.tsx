@@ -26,6 +26,7 @@ export default function RichTextEditor({
   const [isAILoading, setIsAILoading] = useState(false);
   const [isAIEnabled, setIsAIEnabled] = useState(true);
   const autocompleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const triggerAutocomplete = useCallback(async (editorInstance: any) => {
     if (!isAIEnabled || isAILoading) return;
@@ -121,8 +122,7 @@ export default function RichTextEditor({
     },
   });
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleImageUpload = async (file: File) => {
     if (!file || !editor) return;
 
     setIsUploading(true);
@@ -132,23 +132,35 @@ export default function RichTextEditor({
 
       const response = await fetch('/api/upload', {
         method: 'POST',
-        credentials: 'include', // Include cookies for authentication
+        credentials: 'include',
         body: formData,
       });
+
+      if (!response.ok) {
+        const text = await response.text();
+        let errorMsg = `Upload failed (${response.status})`;
+        try {
+          const json = JSON.parse(text);
+          if (json.error) errorMsg = json.error;
+        } catch {}
+        alert('Failed to upload image: ' + errorMsg);
+        return;
+      }
 
       const result = await response.json();
       if (result.success) {
         editor.chain().focus().setImage({ src: result.url }).run();
       } else {
-        alert('Failed to upload image: ' + result.error);
+        alert('Failed to upload image: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error uploading image:', error);
       alert('Failed to upload image');
     } finally {
       setIsUploading(false);
-      // Reset input
-      event.target.value = '';
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -197,16 +209,14 @@ export default function RichTextEditor({
   }, []);
 
   const addImage = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = (e: Event) => {
-      const target = e.target as HTMLInputElement;
-      if (target.files) {
-        handleImageUpload({ target } as React.ChangeEvent<HTMLInputElement>);
-      }
-    };
-    input.click();
+    fileInputRef.current?.click();
+  };
+
+  const onFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
   };
 
   const setLink = () => {
@@ -445,6 +455,15 @@ export default function RichTextEditor({
           ↷
         </button>
       </div>
+
+      {/* Hidden file input for image uploads */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={onFileInputChange}
+        className="hidden"
+      />
 
       {/* Editor Content */}
       <div className="relative">
