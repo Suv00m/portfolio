@@ -487,6 +487,71 @@ pre, code, kbd, samp {
 }
 
 
+/* News article content styles — !important to override Tailwind prose */
+.news-article-content h2 {
+  font-family: var(--font-display), system-ui, sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 1.75rem !important;
+  letter-spacing: -0.02em !important;
+  color: #0a0a0a !important;
+  margin-top: 2.5rem !important;
+  margin-bottom: 1rem !important;
+  padding-bottom: 0.5rem !important;
+  border-bottom: 3px solid #0a0a0a !important;
+  line-height: 1.3 !important;
+}
+
+.news-article-content h3 {
+  font-family: var(--font-display), system-ui, sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 1.35rem !important;
+  letter-spacing: -0.01em !important;
+  color: #ff3d00 !important;
+  margin-top: 2rem !important;
+  margin-bottom: 0.75rem !important;
+  line-height: 1.3 !important;
+}
+
+.news-article-content p {
+  color: #525252 !important;
+  line-height: 1.8 !important;
+  margin-bottom: 1.25rem !important;
+}
+
+.news-article-content ul {
+  margin: 1rem 0 1.5rem 0 !important;
+  padding-left: 0 !important;
+  list-style: none !important;
+}
+
+.news-article-content ul li {
+  position: relative;
+  padding: 0.625rem 1rem 0.625rem 2rem !important;
+  margin-bottom: 0.5rem !important;
+  background: #f9f9f9 !important;
+  border-left: 3px solid #ff3d00 !important;
+}
+
+.news-article-content ul li::before {
+  content: '' !important;
+  position: absolute;
+  left: 0.75rem;
+  top: 1.1rem;
+  width: 6px;
+  height: 6px;
+  background: #ff3d00;
+}
+
+.news-article-content strong {
+  color: #0a0a0a !important;
+  font-weight: 700 !important;
+}
+
+.news-article-content em {
+  color: #525252 !important;
+  font-style: italic !important;
+}
+
 /* Code block copy button */
 .code-copy-btn {
   position: absolute;

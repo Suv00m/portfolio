@@ -24,6 +24,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://shuvam.xyz'),
   title: "shuv's site",
   description: "Shuvam Mandal's Personal Website",
   icons: {

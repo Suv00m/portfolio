@@ -19,3 +19,28 @@ export interface CreateBlogPost {
   thumbnail?: string; // URL to thumbnail image
   links?: BlogLink[];
 }
+
+export interface NewsArticle {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  excerpt: string;
+  thumbnail?: string;
+  source_urls: string[];
+  source_subreddit: string;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateNewsArticle {
+  title: string;
+  slug: string;
+  description: string;
+  excerpt: string;
+  thumbnail?: string;
+  source_urls: string[];
+  source_subreddit: string;
+  tags: string[];
+}

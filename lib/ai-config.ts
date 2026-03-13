@@ -33,6 +33,7 @@ export const MODEL_CONFIG = {
   autocomplete: DEFAULT_MODEL, // Fast model for autocomplete
   ideas: DEFAULT_MODEL, // Creative model for idea generation
   assist: DEFAULT_MODEL, // Capable model for writing assistance
+  newsGeneration: DEFAULT_MODEL, // Model for news article generation
 };
 
 /**

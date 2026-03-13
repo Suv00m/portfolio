@@ -13,6 +13,7 @@ const navItems: NavItem[] = [
   { label: "Home", href: "/", description: "Back to base" },
   { label: "Services", href: "/services", description: "What I build" },
   { label: "Blog", href: "/blog", description: "Thoughts & code" },
+  { label: "News", href: "/news", description: "AI & tech updates" },
   { label: "Socials", href: "/socials", description: "Find me online" },
   { label: "Contact", href: "/contact", description: "Let's talk" },
 ];
@@ -65,7 +66,7 @@ export default function CenterNavbar() {
           className={cn(
             "absolute right-0 top-0 overflow-hidden border-3 border-[#0a0a0a] bg-white transition-all duration-300 ease-out",
             isOpen
-              ? "w-72 opacity-100 translate-x-0 translate-y-0 shadow-brutal-lg"
+              ? "w-64 opacity-100 translate-x-0 translate-y-0 shadow-brutal-lg"
               : "w-14 opacity-0 translate-x-2 -translate-y-2 pointer-events-none"
           )}
           style={{ borderWidth: '3px' }}
@@ -87,7 +88,7 @@ export default function CenterNavbar() {
                 onMouseEnter={() => setHoveredItem(item.label)}
                 onMouseLeave={() => setHoveredItem(null)}
                 className={cn(
-                  "group relative flex w-full items-center justify-between p-4 text-left transition-all duration-200",
+                  "group relative flex w-full items-center justify-between px-4 py-3 text-left transition-all duration-200",
                   "hover:bg-[#f5f5f5]",
                   "focus:outline-none focus:bg-[#f5f5f5]"
                 )}

@@ -1,115 +1,94 @@
 import { BlogPost, CreateBlogPost } from './types';
-import { randomUUID } from 'crypto';
-import {
-  createOrUpdateFile,
-  deleteFile,
-  getDirectoryFiles,
-  getFileContent,
-  BLOGS_DIR_PATH,
-} from './github-api';
+import { supabase, supabaseAdmin } from './supabase';
 
 /**
  * Get all blog posts, sorted by created_at descending
  */
 export async function getAllBlogPosts(): Promise<BlogPost[]> {
-  try {
-    const files = await getDirectoryFiles(BLOGS_DIR_PATH);
-    
-    const posts = await Promise.all(
-      files.map(async (file) => {
-        const filePath = `${BLOGS_DIR_PATH}/${file}`;
-        const content = await getFileContent(filePath);
-        if (!content) return null;
-        return JSON.parse(content) as BlogPost;
-      })
-    );
-    
-    // Filter out nulls and sort by created_at descending
-    return posts
-      .filter((post): post is BlogPost => post !== null)
-      .sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-  } catch (error) {
-    console.error('Error reading blog posts:', error);
+  const { data, error } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching blog posts:', error);
     return [];
   }
+
+  return data || [];
 }
 
 /**
  * Get a single blog post by ID
  */
 export async function getBlogPost(id: string): Promise<BlogPost | null> {
-  try {
-    const filePath = `${BLOGS_DIR_PATH}/${id}.json`;
-    const content = await getFileContent(filePath);
-    if (!content) return null;
-    return JSON.parse(content) as BlogPost;
-  } catch (error) {
-    console.error(`Error reading blog post ${id}:`, error);
+  const { data, error } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error(`Error fetching blog post ${id}:`, error);
     return null;
   }
+
+  return data;
 }
 
 /**
  * Create a new blog post
  */
 export async function createBlogPost(data: CreateBlogPost): Promise<BlogPost> {
-  const now = new Date().toISOString();
-  const newPost: BlogPost = {
-    id: randomUUID(),
-    title: data.title,
-    description: data.description,
-    thumbnail: data.thumbnail,
-    links: data.links || [],
-    created_at: now,
-    updated_at: now,
-  };
-  
-  const filePath = `${BLOGS_DIR_PATH}/${newPost.id}.json`;
-  const content = JSON.stringify(newPost, null, 2);
-  const message = `Create blog post: ${newPost.title}`;
-  
-  await createOrUpdateFile(filePath, content, message);
-  
-  return newPost;
+  const { data: created, error } = await supabaseAdmin
+    .from('blog_posts')
+    .insert({
+      title: data.title,
+      description: data.description,
+      thumbnail: data.thumbnail || null,
+      links: data.links || [],
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating blog post:', error);
+    throw new Error('Failed to create blog post');
+  }
+
+  return created;
 }
 
 /**
  * Update an existing blog post
  */
 export async function updateBlogPost(id: string, data: Partial<CreateBlogPost>): Promise<BlogPost> {
-  const existingPost = await getBlogPost(id);
-  if (!existingPost) {
-    throw new Error('Blog post not found');
+  const { data: updated, error } = await supabaseAdmin
+    .from('blog_posts')
+    .update(data)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating blog post:', error);
+    throw new Error('Failed to update blog post');
   }
-  
-  const updatedPost: BlogPost = {
-    ...existingPost,
-    ...data,
-    updated_at: new Date().toISOString(),
-  };
-  
-  const filePath = `${BLOGS_DIR_PATH}/${id}.json`;
-  const content = JSON.stringify(updatedPost, null, 2);
-  const message = `Update blog post: ${updatedPost.title}`;
-  
-  await createOrUpdateFile(filePath, content, message);
-  
-  return updatedPost;
+
+  return updated;
 }
 
 /**
  * Delete a blog post
  */
 export async function deleteBlogPost(id: string): Promise<void> {
-  const existingPost = await getBlogPost(id);
-  if (!existingPost) {
-    throw new Error('Blog post not found');
+  const { error } = await supabaseAdmin
+    .from('blog_posts')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting blog post:', error);
+    throw new Error('Failed to delete blog post');
   }
-  
-  const filePath = `${BLOGS_DIR_PATH}/${id}.json`;
-  const message = `Delete blog post: ${existingPost.title}`;
-  
-  await deleteFile(filePath, message);
 }

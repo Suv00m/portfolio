@@ -1,0 +1,212 @@
+import { getExistingSourceUrls, getExistingTitles } from './news';
+
+const SUBREDDITS = [
+  'artificial',
+  'MachineLearning',
+  'technology',
+  'LocalLLaMA',
+  'singularity',
+  'ChatGPT',
+  'OpenAI',
+  'StableDiffusion',
+  'GoogleGeminiAI',
+  'datascience',
+];
+
+const USER_AGENT = 'Mozilla/5.0 (compatible; NewsBot/1.0)';
+
+interface RedditPost {
+  title: string;
+  score: number;
+  url: string;
+  permalink: string;
+  selftext: string;
+  subreddit: string;
+  created_utc: number;
+  num_comments: number;
+}
+
+export interface RedditTopic {
+  title: string;
+  score: number;
+  url: string;
+  permalink: string;
+  selftext: string;
+  subreddit: string;
+  created_utc: number;
+  num_comments: number;
+  sourceUrl: string;
+}
+
+// Extract meaningful keywords from a title (ignore common words)
+function extractKeywords(title: string): Set<string> {
+  const stopWords = new Set([
+    'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+    'should', 'may', 'might', 'can', 'shall', 'to', 'of', 'in', 'for',
+    'on', 'with', 'at', 'by', 'from', 'as', 'into', 'through', 'during',
+    'before', 'after', 'above', 'below', 'between', 'and', 'but', 'or',
+    'not', 'no', 'nor', 'so', 'yet', 'both', 'either', 'neither', 'each',
+    'every', 'all', 'any', 'few', 'more', 'most', 'other', 'some', 'such',
+    'than', 'too', 'very', 'just', 'about', 'up', 'out', 'if', 'then',
+    'that', 'this', 'these', 'those', 'it', 'its', 'my', 'your', 'his',
+    'her', 'our', 'their', 'what', 'which', 'who', 'whom', 'how', 'when',
+    'where', 'why', 'new', 'now', 'also', 'like', 'get', 'got', 'one',
+    'two', 'first', 'over', 'only', 'even', 'back', 'still', 'well',
+  ]);
+
+  return new Set(
+    title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && !stopWords.has(w))
+  );
+}
+
+// Check if two titles are about the same topic (>50% keyword overlap)
+function isSimilarTitle(title1: string, title2: string): boolean {
+  const keywords1 = extractKeywords(title1);
+  const keywords2 = extractKeywords(title2);
+
+  if (keywords1.size === 0 || keywords2.size === 0) return false;
+
+  let overlap = 0;
+  for (const word of keywords1) {
+    if (keywords2.has(word)) overlap++;
+  }
+
+  const smaller = Math.min(keywords1.size, keywords2.size);
+  return smaller > 0 && overlap / smaller > 0.5;
+}
+
+async function fetchSubreddit(subreddit: string, sort: 'hot' | 'rising' | 'top'): Promise<RedditPost[]> {
+  try {
+    const timeParam = sort === 'top' ? '&t=day' : '';
+    const response = await fetch(
+      `https://www.reddit.com/r/${subreddit}/${sort}.json?limit=15${timeParam}`,
+      {
+        headers: { 'User-Agent': USER_AGENT },
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`Failed to fetch r/${subreddit}/${sort}:`, response.status);
+      return [];
+    }
+
+    const data = await response.json();
+    return (data?.data?.children || []).map((child: any) => child.data);
+  } catch (error) {
+    console.error(`Error fetching r/${subreddit}/${sort}:`, error);
+    return [];
+  }
+}
+
+async function fetchSubredditAll(subreddit: string): Promise<RedditPost[]> {
+  const [hot, rising, top] = await Promise.all([
+    fetchSubreddit(subreddit, 'hot'),
+    fetchSubreddit(subreddit, 'rising'),
+    fetchSubreddit(subreddit, 'top'),
+  ]);
+
+  // Deduplicate by permalink
+  const seen = new Set<string>();
+  const all: RedditPost[] = [];
+  for (const post of [...hot, ...rising, ...top]) {
+    if (!seen.has(post.permalink)) {
+      seen.add(post.permalink);
+      all.push(post);
+    }
+  }
+  return all;
+}
+
+export async function getTrendingTopics(count: number = 5, subreddits?: string[]): Promise<RedditTopic[]> {
+  const subs = subreddits || SUBREDDITS;
+  const now = Date.now() / 1000;
+  const oneDayAgo = now - 24 * 60 * 60;
+
+  const allPosts = await Promise.all(subs.map(fetchSubredditAll));
+
+  const filtered = allPosts
+    .flat()
+    .filter((post) => post.score > 50 && post.created_utc > oneDayAgo)
+    .filter((post) => !post.url?.includes('reddit.com/gallery'))
+    .filter((post) => !post.title?.toLowerCase().includes('[d]') && !post.title?.toLowerCase().includes('[discussion]'))
+    // Rank by trending velocity: high engagement relative to age
+    .map((post) => {
+      const ageHours = Math.max((now - post.created_utc) / 3600, 1);
+      const engagementRate = (post.score + post.num_comments * 2) / ageHours;
+      return { ...post, engagementRate };
+    })
+    .sort((a, b) => b.engagementRate - a.engagementRate);
+
+  // Deduplicate against existing articles — by URL and title similarity
+  const [existingUrls, existingTitles] = await Promise.all([
+    getExistingSourceUrls(),
+    getExistingTitles(),
+  ]);
+  const existingUrlSet = new Set(existingUrls);
+
+  const deduplicated = filtered.filter((post) => {
+    const sourceUrl = `https://www.reddit.com${post.permalink}`;
+
+    // Check exact URL match
+    if (existingUrlSet.has(sourceUrl)) return false;
+
+    // Check title similarity against existing articles
+    for (const existingTitle of existingTitles) {
+      if (isSimilarTitle(post.title, existingTitle)) return false;
+    }
+
+    return true;
+  });
+
+  // Also deduplicate within the batch itself (same topic from different subreddits)
+  const uniqueTopics: RedditPost[] = [];
+  for (const post of deduplicated) {
+    const isDuplicateInBatch = uniqueTopics.some((existing) =>
+      isSimilarTitle(post.title, existing.title)
+    );
+    if (!isDuplicateInBatch) {
+      uniqueTopics.push(post);
+    }
+  }
+
+  return uniqueTopics.slice(0, count).map((post) => ({
+    title: post.title,
+    score: post.score,
+    url: post.url,
+    permalink: post.permalink,
+    selftext: post.selftext,
+    subreddit: post.subreddit,
+    created_utc: post.created_utc,
+    num_comments: post.num_comments,
+    sourceUrl: `https://www.reddit.com${post.permalink}`,
+  }));
+}
+
+export async function getPostDetails(permalink: string): Promise<string[]> {
+  try {
+    const response = await fetch(
+      `https://www.reddit.com${permalink}.json?limit=10`,
+      {
+        headers: { 'User-Agent': USER_AGENT },
+      }
+    );
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    const comments = data?.[1]?.data?.children || [];
+
+    return comments
+      .filter((c: any) => c.kind === 't1' && c.data?.body)
+      .slice(0, 10)
+      .map((c: any) => c.data.body);
+  } catch (error) {
+    console.error('Error fetching post details:', error);
+    return [];
+  }
+}

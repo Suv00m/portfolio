@@ -6,7 +6,7 @@ import CenterNavbar from "@/components/CenterNavbar";
 import RichTextEditor from "@/components/RichTextEditor";
 import IdeaBox from "@/components/IdeaBox";
 import ImagePicker from "@/components/ImagePicker";
-import { BlogPost, BlogLink } from "@/lib/types";
+import { BlogPost, BlogLink, NewsArticle } from "@/lib/types";
 import { processEmbedContent } from "@/lib/embed-utils";
 import { initializeCopyButtons } from "@/lib/code-copy-utils";
 
@@ -31,6 +31,24 @@ export default function AdminDashboard() {
   const [newLink, setNewLink] = useState({ text: "", url: "" });
   const previewContentRef = useRef<HTMLDivElement>(null);
 
+  // News generation state
+  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
+  const [newsCount, setNewsCount] = useState(3);
+  const [isGeneratingNews, setIsGeneratingNews] = useState(false);
+  const [newsResult, setNewsResult] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  // Cron state
+  const [cronConfig, setCronConfig] = useState<{
+    cronSecret: boolean;
+    supabase: boolean;
+    openrouter: boolean;
+    pexels: boolean;
+    schedule: string;
+  } | null>(null);
+  const [isCronTesting, setIsCronTesting] = useState(false);
+  const [cronResult, setCronResult] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [lastCronRun, setLastCronRun] = useState<string | null>(null);
+
   // Check authentication status on mount
   useEffect(() => {
     checkAuth();
@@ -39,6 +57,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchBlogs();
+      fetchNewsArticles();
+      fetchCronConfig();
     }
   }, [isAuthenticated]);
 
@@ -266,6 +286,124 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error deleting blog:', error);
       alert('Failed to delete blog post');
+    }
+  };
+
+  const fetchCronConfig = async () => {
+    try {
+      const response = await fetch("/api/admin/cron-test", { credentials: "include" });
+      const result = await response.json();
+      if (result.success) {
+        setCronConfig(result.config);
+      }
+    } catch (error) {
+      console.error("Error fetching cron config:", error);
+    }
+  };
+
+  const handleCronTest = async () => {
+    setIsCronTesting(true);
+    setCronResult(null);
+
+    try {
+      const response = await fetch("/api/admin/cron-test", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      const result = await response.json();
+      const now = new Date().toLocaleString();
+      setLastCronRun(now);
+
+      if (result.success && result.result?.success) {
+        const created = result.result.articlesCreated || 0;
+        setCronResult({
+          message: created > 0
+            ? `Cron executed — ${created} article${created > 1 ? "s" : ""} generated`
+            : result.result.message || "Cron executed — no new topics found",
+          type: "success",
+        });
+        await fetchNewsArticles();
+      } else {
+        setCronResult({
+          message: result.result?.error || result.error || "Cron test failed",
+          type: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Cron test error:", error);
+      setCronResult({ message: "Failed to trigger cron job", type: "error" });
+    } finally {
+      setIsCronTesting(false);
+    }
+  };
+
+  const fetchNewsArticles = async () => {
+    try {
+      const response = await fetch("/api/news");
+      const result = await response.json();
+      if (result.success) {
+        setNewsArticles(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching news:", error);
+    }
+  };
+
+  const handleGenerateNews = async () => {
+    setIsGeneratingNews(true);
+    setNewsResult(null);
+
+    try {
+      const response = await fetch("/api/admin/generate-news", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ count: newsCount }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setNewsResult({
+          message: result.articlesCreated > 0
+            ? `Generated ${result.articlesCreated} article${result.articlesCreated > 1 ? "s" : ""}`
+            : result.message || "No new trending topics found",
+          type: "success",
+        });
+        await fetchNewsArticles();
+      } else {
+        setNewsResult({
+          message: result.error || "Failed to generate news",
+          type: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error generating news:", error);
+      setNewsResult({ message: "Failed to generate news", type: "error" });
+    } finally {
+      setIsGeneratingNews(false);
+    }
+  };
+
+  const handleDeleteNews = async (slug: string) => {
+    if (!window.confirm("Delete this news article?")) return;
+
+    try {
+      const response = await fetch(`/api/news/${slug}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        await fetchNewsArticles();
+      } else {
+        alert("Error: " + result.error);
+      }
+    } catch (error) {
+      console.error("Error deleting news:", error);
+      alert("Failed to delete article");
     }
   };
 
@@ -805,16 +943,269 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Footer Link */}
-          <div className="mt-16 pt-8 border-t-4 border-[#0a0a0a]">
+          {/* News Generation Section */}
+          <div className="mt-16 space-y-8">
+            <div className="flex items-center gap-4 mb-8">
+              <h2 className="font-display text-2xl font-bold tracking-tight">NEWS GENERATION</h2>
+              <div className="flex-1 h-1 bg-[#0a0a0a]" />
+            </div>
+
+            {/* Generate Controls */}
+            <div className="card-brutal p-6 md:p-8">
+              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6">
+                <div>
+                  <label className="block font-display text-sm font-bold uppercase tracking-wider mb-3">
+                    Articles to Generate
+                  </label>
+                  <div className="flex items-center gap-3">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setNewsCount(n)}
+                        className={`w-12 h-12 font-display text-lg font-bold border-3 border-[#0a0a0a] transition-all ${
+                          newsCount === n
+                            ? "bg-[#0a0a0a] text-white shadow-brutal-accent"
+                            : "bg-white text-[#0a0a0a] hover:bg-[#f5f5f5]"
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleGenerateNews}
+                  disabled={isGeneratingNews}
+                  className="btn-brutal disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGeneratingNews ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <div className="loading-dot !w-3 !h-3" />
+                        <div className="loading-dot !w-3 !h-3" />
+                        <div className="loading-dot !w-3 !h-3" />
+                      </div>
+                      GENERATING...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="square" strokeLinejoin="miter" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      GENERATE NEWS
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <p className="mt-4 text-xs text-[#737373]">
+                Fetches trending AI/tech topics from Reddit, generates articles via AI, and publishes to the news section.
+              </p>
+
+              {newsResult && (
+                <div
+                  className={`mt-4 p-4 border-3 border-[#0a0a0a] font-display text-sm font-bold ${
+                    newsResult.type === "success"
+                      ? "bg-[#22c55e] text-white"
+                      : "bg-[#ff3d00] text-white"
+                  }`}
+                >
+                  {newsResult.message}
+                </div>
+              )}
+            </div>
+
+            {/* Cron Job Control Panel */}
+            <div className="card-brutal-inverse p-6 md:p-8">
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-3 h-3 bg-[#ff3d00] rotate-45" />
+                    <h3 className="font-display text-lg font-bold tracking-tight text-white uppercase">
+                      Cron Job Control
+                    </h3>
+                  </div>
+
+                  {/* Config Status */}
+                  {cronConfig && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                      {Object.entries(cronConfig).filter(([key]) => key !== 'schedule').map(([key, value]) => (
+                        <div key={key} className="flex items-center gap-2">
+                          <div className={`w-2.5 h-2.5 border-2 border-white ${value ? "bg-[#22c55e]" : "bg-[#ff3d00]"}`} />
+                          <span className="font-mono text-xs text-[#a3a3a3] uppercase">{key}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1a1a] border border-[#333]">
+                      <svg className="w-4 h-4 text-[#737373]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-mono text-xs text-[#a3a3a3]">
+                        {cronConfig?.schedule || "Loading..."}
+                      </span>
+                    </div>
+                    {lastCronRun && (
+                      <span className="font-mono text-xs text-[#737373]">
+                        Last run: {lastCronRun}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleCronTest}
+                  disabled={isCronTesting}
+                  className="px-6 py-3 bg-[#ff3d00] text-white font-display text-sm font-bold uppercase tracking-wider border-3 border-white shadow-[4px_4px_0px_#fff] hover:shadow-[6px_6px_0px_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isCronTesting ? (
+                    <span className="flex items-center gap-2">
+                      <div className="loading-dot !w-2.5 !h-2.5 !bg-white" />
+                      <div className="loading-dot !w-2.5 !h-2.5 !bg-white" />
+                      <div className="loading-dot !w-2.5 !h-2.5 !bg-white" />
+                      RUNNING...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="square" strokeLinejoin="miter" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        <path strokeLinecap="square" strokeLinejoin="miter" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      TEST CRON NOW
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {cronResult && (
+                <div
+                  className={`mt-4 p-4 border-2 font-display text-sm font-bold ${
+                    cronResult.type === "success"
+                      ? "border-[#22c55e] bg-[#22c55e]/20 text-[#22c55e]"
+                      : "border-[#ff3d00] bg-[#ff3d00]/20 text-[#ff3d00]"
+                  }`}
+                >
+                  {cronResult.message}
+                </div>
+              )}
+            </div>
+
+            {/* Existing News Articles */}
+            <div>
+              <div className="flex items-center gap-4 mb-8">
+                <h3 className="font-display text-xl font-bold tracking-tight">
+                  ALL NEWS <span className="tag-brutal-accent ml-2">{newsArticles.length}</span>
+                </h3>
+                <div className="flex-1 h-1 bg-[#e5e5e5]" />
+              </div>
+
+              {newsArticles.length === 0 ? (
+                <div className="card-brutal p-12 text-center">
+                  <div className="w-20 h-20 mx-auto mb-6 bg-[#f5f5f5] border-3 border-dashed border-[#e5e5e5] flex items-center justify-center">
+                    <span className="text-4xl text-[#e5e5e5]">+</span>
+                  </div>
+                  <p className="font-display text-lg font-bold text-[#737373]">No news articles yet.</p>
+                  <p className="text-[#737373] mt-2">Generate your first batch above!</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {newsArticles.map((article) => (
+                    <article
+                      key={article.id}
+                      className="card-brutal p-6 md:p-8 hover:shadow-brutal-lg hover:-translate-x-1 hover:-translate-y-1 transition-all"
+                    >
+                      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-3">
+                            <span className="tag-brutal text-xs">
+                              {new Date(article.created_at).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "2-digit",
+                                day: "2-digit",
+                              }).replace(/\//g, ".")}
+                            </span>
+                            <span className="tag-brutal-accent text-xs">
+                              r/{article.source_subreddit}
+                            </span>
+                          </div>
+                          <h4 className="font-display text-xl md:text-2xl font-bold tracking-tight">
+                            {article.title}
+                          </h4>
+                          <p className="mt-2 text-sm text-[#737373] line-clamp-1">
+                            {article.excerpt}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleDeleteNews(article.slug)}
+                            className="px-4 py-2 bg-[#ff3d00] text-white font-display text-xs font-bold uppercase tracking-wider border-2 border-[#0a0a0a] hover:bg-[#0a0a0a] transition-colors"
+                          >
+                            DELETE
+                          </button>
+                        </div>
+                      </div>
+                      {article.tags && article.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {article.tags.map((tag) => (
+                            <span key={tag} className="tag-brutal text-xs">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="pt-4 border-t-2 border-[#e5e5e5]">
+                        <a
+                          href={`/news/${article.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-[#0066ff] hover:text-[#ff3d00] font-bold text-sm uppercase tracking-wider transition-colors"
+                        >
+                          VIEW ARTICLE
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="square" strokeLinejoin="miter" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer Links */}
+          <div className="mt-16 pt-8 border-t-4 border-[#0a0a0a] grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Link
               href="/blog"
-              className="inline-flex items-center gap-3 text-[#0a0a0a] hover:text-[#ff3d00] font-display font-bold uppercase tracking-wider transition-colors"
+              className="group card-brutal p-6 flex items-center justify-between hover:!shadow-brutal-accent"
             >
-              <svg className="w-5 h-5 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <div>
+                <span className="block font-mono text-xs text-[#737373] uppercase tracking-wider mb-1">/blog</span>
+                <span className="font-display text-lg font-bold tracking-tight group-hover:text-[#ff3d00] transition-colors">
+                  VIEW PUBLIC BLOG
+                </span>
+              </div>
+              <svg className="w-6 h-6 text-[#a3a3a3] group-hover:text-[#ff3d00] group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="square" strokeLinejoin="miter" d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
-              VIEW PUBLIC BLOG
+            </Link>
+            <Link
+              href="/news"
+              className="group card-brutal p-6 flex items-center justify-between hover:!shadow-brutal-blue"
+            >
+              <div>
+                <span className="block font-mono text-xs text-[#737373] uppercase tracking-wider mb-1">/news</span>
+                <span className="font-display text-lg font-bold tracking-tight group-hover:text-[#0066ff] transition-colors">
+                  VIEW PUBLIC NEWS
+                </span>
+              </div>
+              <svg className="w-6 h-6 text-[#a3a3a3] group-hover:text-[#0066ff] group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="square" strokeLinejoin="miter" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
             </Link>
           </div>
         </div>
