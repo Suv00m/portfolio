@@ -3,7 +3,6 @@ import { getTrendingTopics, getPostDetails, NewsTopic } from '@/lib/reddit';
 import { getTrendingHNTopics, getHNComments } from '@/lib/hackernews';
 import { generateNewsArticle } from '@/lib/news-generator';
 import { createNewsArticle } from '@/lib/news';
-import { getCronHour } from '@/lib/settings';
 
 export const maxDuration = 60;
 
@@ -13,20 +12,6 @@ export async function GET(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if current hour matches configured schedule
-    const skipCheck = request.headers.get('x-skip-hour-check') === 'true';
-    if (!skipCheck) {
-      const currentHour = new Date().getUTCHours();
-      const configuredHour = await getCronHour();
-      if (currentHour !== configuredHour) {
-        return NextResponse.json({
-          success: true,
-          message: 'Not scheduled for this hour',
-          skipped: true,
-        });
-      }
     }
 
     // Fetch from both sources in parallel

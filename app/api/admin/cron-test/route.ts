@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Call the cron endpoint internally, skipping hour check for manual triggers
+    // Call the cron endpoint internally
     const protocol = request.headers.get('x-forwarded-proto') || 'http';
     const host = request.headers.get('host') || 'localhost:3000';
     const cronUrl = `${protocol}://${host}/api/cron/news`;
@@ -27,7 +27,6 @@ export async function POST(request: NextRequest) {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${cronSecret}`,
-        'x-skip-hour-check': 'true',
       },
     });
 
@@ -82,7 +81,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PUT — update cron schedule hour
+// PUT — update cron schedule hour (saved to DB for display; actual cron change requires redeploy)
 export async function PUT(request: NextRequest) {
   try {
     const authError = await requireAuth(request);
