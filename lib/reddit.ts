@@ -13,7 +13,9 @@ const SUBREDDITS = [
   'datascience',
 ];
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; NewsBot/1.0)';
+// Simple in-memory cache (1 hour TTL)
+const cache = new Map<string, { data: RedditPost[]; timestamp: number }>();
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 interface RedditPost {
   title: string;
@@ -26,7 +28,7 @@ interface RedditPost {
   num_comments: number;
 }
 
-export interface RedditTopic {
+export interface NewsTopic {
   title: string;
   score: number;
   url: string;
@@ -36,7 +38,10 @@ export interface RedditTopic {
   created_utc: number;
   num_comments: number;
   sourceUrl: string;
+  source: 'reddit' | 'hackernews';
 }
+
+export type RedditTopic = NewsTopic;
 
 // Extract meaningful keywords from a title (ignore common words)
 function extractKeywords(title: string): Set<string> {
@@ -80,57 +85,51 @@ function isSimilarTitle(title1: string, title2: string): boolean {
   return smaller > 0 && overlap / smaller > 0.5;
 }
 
-async function fetchSubreddit(subreddit: string, sort: 'hot' | 'rising' | 'top'): Promise<RedditPost[]> {
+async function fetchSubreddit(subreddit: string): Promise<RedditPost[]> {
+  const cacheKey = subreddit.toLowerCase();
+  const cached = cache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.data;
+  }
+
   try {
-    const timeParam = sort === 'top' ? '&t=day' : '';
     const response = await fetch(
-      `https://www.reddit.com/r/${subreddit}/${sort}.json?limit=15${timeParam}`,
-      {
-        headers: { 'User-Agent': USER_AGENT },
-      }
+      `https://www.reddit.com/r/${subreddit}/hot.json?limit=25`
     );
 
     if (!response.ok) {
-      console.error(`Failed to fetch r/${subreddit}/${sort}:`, response.status);
+      console.error(`Failed to fetch r/${subreddit}/hot:`, response.status);
       return [];
     }
 
     const data = await response.json();
-    return (data?.data?.children || []).map((child: any) => child.data);
+    const posts: RedditPost[] = (data?.data?.children || []).map((child: any) => child.data);
+    cache.set(cacheKey, { data: posts, timestamp: Date.now() });
+    return posts;
   } catch (error) {
-    console.error(`Error fetching r/${subreddit}/${sort}:`, error);
+    console.error(`Error fetching r/${subreddit}/hot:`, error);
     return [];
   }
 }
 
-async function fetchSubredditAll(subreddit: string): Promise<RedditPost[]> {
-  const [hot, rising, top] = await Promise.all([
-    fetchSubreddit(subreddit, 'hot'),
-    fetchSubreddit(subreddit, 'rising'),
-    fetchSubreddit(subreddit, 'top'),
-  ]);
-
-  // Deduplicate by permalink
-  const seen = new Set<string>();
-  const all: RedditPost[] = [];
-  for (const post of [...hot, ...rising, ...top]) {
-    if (!seen.has(post.permalink)) {
-      seen.add(post.permalink);
-      all.push(post);
-    }
+// Fetch subreddits sequentially to avoid burst detection
+async function fetchAllSubreddits(subs: string[]): Promise<RedditPost[]> {
+  const allPosts: RedditPost[] = [];
+  for (const sub of subs) {
+    const posts = await fetchSubreddit(sub);
+    allPosts.push(...posts);
   }
-  return all;
+  return allPosts;
 }
 
-export async function getTrendingTopics(count: number = 5, subreddits?: string[]): Promise<RedditTopic[]> {
+export async function getTrendingTopics(count: number = 5, subreddits?: string[]): Promise<NewsTopic[]> {
   const subs = subreddits || SUBREDDITS;
   const now = Date.now() / 1000;
   const oneDayAgo = now - 24 * 60 * 60;
 
-  const allPosts = await Promise.all(subs.map(fetchSubredditAll));
+  const allPosts = await fetchAllSubreddits(subs);
 
   const filtered = allPosts
-    .flat()
     .filter((post) => post.score > 50 && post.created_utc > oneDayAgo)
     .filter((post) => !post.url?.includes('reddit.com/gallery'))
     .filter((post) => !post.title?.toLowerCase().includes('[d]') && !post.title?.toLowerCase().includes('[discussion]'))
@@ -184,16 +183,14 @@ export async function getTrendingTopics(count: number = 5, subreddits?: string[]
     created_utc: post.created_utc,
     num_comments: post.num_comments,
     sourceUrl: `https://www.reddit.com${post.permalink}`,
+    source: 'reddit',
   }));
 }
 
 export async function getPostDetails(permalink: string): Promise<string[]> {
   try {
     const response = await fetch(
-      `https://www.reddit.com${permalink}.json?limit=10`,
-      {
-        headers: { 'User-Agent': USER_AGENT },
-      }
+      `https://www.reddit.com${permalink}.json?limit=10`
     );
 
     if (!response.ok) return [];

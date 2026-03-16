@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-middleware';
-import { getTrendingTopics, getPostDetails } from '@/lib/reddit';
+import { getTrendingTopics, getPostDetails, NewsTopic } from '@/lib/reddit';
+import { getTrendingHNTopics, getHNComments } from '@/lib/hackernews';
 import { generateNewsArticle } from '@/lib/news-generator';
 import { createNewsArticle } from '@/lib/news';
 
@@ -15,7 +16,25 @@ export async function POST(request: NextRequest) {
     const count = Math.min(body.count || 3, 5);
     const subreddits = body.subreddits || undefined;
 
-    const topics = await getTrendingTopics(count, subreddits);
+    // Fetch from both sources in parallel
+    const [redditTopics, hnTopics] = await Promise.all([
+      getTrendingTopics(count, subreddits),
+      getTrendingHNTopics(count),
+    ]);
+
+    // Combine and rank by engagement rate
+    const allTopics: (NewsTopic & { engagementRate: number })[] = [
+      ...redditTopics,
+      ...hnTopics,
+    ].map((topic) => {
+      const now = Date.now() / 1000;
+      const ageHours = Math.max((now - topic.created_utc) / 3600, 1);
+      const engagementRate = (topic.score + topic.num_comments * 2) / ageHours;
+      return { ...topic, engagementRate };
+    });
+
+    allTopics.sort((a, b) => b.engagementRate - a.engagementRate);
+    const topics = allTopics.slice(0, count);
 
     if (topics.length === 0) {
       return NextResponse.json({
@@ -28,7 +47,14 @@ export async function POST(request: NextRequest) {
     const results: { slug: string; title: string }[] = [];
 
     for (const topic of topics) {
-      const comments = await getPostDetails(topic.permalink);
+      let comments: string[];
+      if (topic.source === 'hackernews') {
+        const storyId = parseInt(topic.permalink.split('id=')[1]);
+        comments = await getHNComments(storyId);
+      } else {
+        comments = await getPostDetails(topic.permalink);
+      }
+
       const article = await generateNewsArticle(topic, comments);
 
       if (article) {

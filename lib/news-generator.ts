@@ -1,7 +1,7 @@
 import { generateText } from 'ai';
 import { openrouter, MODEL_CONFIG, isAIEnabled } from './ai-config';
 import { CreateNewsArticle } from './types';
-import { RedditTopic } from './reddit';
+import { NewsTopic } from './reddit';
 import { searchPexelsImage } from './pexels';
 
 interface ArticleOutline {
@@ -67,7 +67,7 @@ function sanitizeJsonString(raw: string): string {
 }
 
 export async function generateNewsArticle(
-  topic: RedditTopic,
+  topic: NewsTopic,
   comments: string[]
 ): Promise<CreateNewsArticle | null> {
   if (!isAIEnabled() || !openrouter) {
@@ -80,9 +80,11 @@ export async function generateNewsArticle(
     : '';
 
   // ── STEP 1: Generate outline + metadata ──
-  const outlinePrompt = `You are an SEO specialist. Given this trending Reddit topic, create an article outline.
+  const sourceLabel = topic.source === 'hackernews' ? 'Hacker News' : `r/${topic.subreddit}`;
 
-Topic from r/${topic.subreddit}:
+  const outlinePrompt = `You are an SEO specialist. Given this trending tech topic, create an article outline.
+
+Topic from ${sourceLabel}:
 Title: ${topic.title}
 ${topic.selftext ? `Context: ${topic.selftext.slice(0, 800)}` : ''}
 Engagement: ${topic.score} upvotes | ${topic.num_comments} comments${commentsContext}
@@ -121,7 +123,7 @@ Respond in valid JSON only (no markdown fences):
 
 "${outline.title}"
 
-Topic from r/${topic.subreddit}: ${topic.title}
+Topic from ${sourceLabel}: ${topic.title}
 ${topic.selftext ? `Context: ${topic.selftext.slice(0, 600)}` : ''}${commentsContext}
 
 The article has a FIXED structure. Write ONLY the content for each section below. Use HTML tags (<p>, <ul>, <li>, <strong>, <em>) within each section. Keep paragraphs to 2-3 sentences. Bold key entities and terms.

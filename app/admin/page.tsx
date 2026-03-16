@@ -44,7 +44,10 @@ export default function AdminDashboard() {
     openrouter: boolean;
     pexels: boolean;
     schedule: string;
+    cronHour: number;
   } | null>(null);
+  const [cronHour, setCronHour] = useState<number>(8);
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
   const [isCronTesting, setIsCronTesting] = useState(false);
   const [cronResult, setCronResult] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [lastCronRun, setLastCronRun] = useState<string | null>(null);
@@ -295,6 +298,9 @@ export default function AdminDashboard() {
       const result = await response.json();
       if (result.success) {
         setCronConfig(result.config);
+        if (result.config.cronHour !== undefined) {
+          setCronHour(result.config.cronHour);
+        }
       }
     } catch (error) {
       console.error("Error fetching cron config:", error);
@@ -1031,7 +1037,7 @@ export default function AdminDashboard() {
                   {/* Config Status */}
                   {cronConfig && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                      {Object.entries(cronConfig).filter(([key]) => key !== 'schedule').map(([key, value]) => (
+                      {Object.entries(cronConfig).filter(([key]) => key !== 'schedule' && key !== 'cronHour').map(([key, value]) => (
                         <div key={key} className="flex items-center gap-2">
                           <div className={`w-2.5 h-2.5 border-2 border-white ${value ? "bg-[#22c55e]" : "bg-[#ff3d00]"}`} />
                           <span className="font-mono text-xs text-[#a3a3a3] uppercase">{key}</span>
@@ -1040,15 +1046,75 @@ export default function AdminDashboard() {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1a1a] border border-[#333]">
-                      <svg className="w-4 h-4 text-[#737373]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  {/* Current schedule display */}
+                  {cronConfig && (
+                    <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-[#1a1a1a] border border-[#333] w-fit">
+                      <svg className="w-4 h-4 text-[#ff3d00]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span className="font-mono text-xs text-[#a3a3a3]">
-                        {cronConfig?.schedule || "Loading..."}
+                      <span className="font-mono text-xs text-white">
+                        {cronConfig.schedule}
                       </span>
                     </div>
+                  )}
+
+                  {/* Schedule picker */}
+                  <div className="flex flex-col gap-3">
+                    <label className="font-mono text-xs text-[#737373] uppercase">Change schedule</label>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <select
+                        value={cronHour}
+                        onChange={(e) => setCronHour(parseInt(e.target.value, 10))}
+                        className="bg-[#1a1a1a] border border-[#333] text-white font-mono text-sm px-3 py-2 outline-none focus:border-[#ff3d00] cursor-pointer min-w-[220px]"
+                      >
+                        {Array.from({ length: 24 }, (_, utcH) => {
+                          const istH = (utcH + 5) % 24;
+                          const period = istH >= 12 ? "PM" : "AM";
+                          const display = istH === 0 ? 12 : istH > 12 ? istH - 12 : istH;
+                          return (
+                            <option key={utcH} value={utcH}>
+                              {display}:30 {period} IST
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <button
+                        onClick={async () => {
+                          setIsSavingSchedule(true);
+                          setCronResult(null);
+                          try {
+                            const res = await fetch("/api/admin/cron-test", {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              credentials: "include",
+                              body: JSON.stringify({ hour: cronHour }),
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                              // Compute schedule string locally for immediate update
+                              const istH = (cronHour + 5) % 24;
+                              const p = istH >= 12 ? "PM" : "AM";
+                              const d = istH === 0 ? 12 : istH > 12 ? istH - 12 : istH;
+                              const newSchedule = `Daily at ${d}:30 ${p} IST (${cronHour}:00 UTC)`;
+                              setCronConfig((prev) => prev ? { ...prev, cronHour, schedule: newSchedule } : prev);
+                              setCronResult({ message: "Schedule updated", type: "success" });
+                            } else {
+                              setCronResult({ message: data.error || "Failed to save", type: "error" });
+                            }
+                          } catch {
+                            setCronResult({ message: "Failed to save schedule", type: "error" });
+                          }
+                          setIsSavingSchedule(false);
+                        }}
+                        disabled={isSavingSchedule || cronHour === cronConfig?.cronHour}
+                        className="px-4 py-2 bg-[#ff3d00] text-white font-display text-xs font-bold uppercase tracking-wider border border-[#ff3d00] hover:bg-[#ff5722] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        {isSavingSchedule ? "Saving..." : "Save Schedule"}
+                      </button>
+                    </div>
+                    <p className="font-mono text-[10px] text-[#525252]">
+                      Cron runs hourly — times are fixed at :30 IST due to UTC+5:30 offset
+                    </p>
                     {lastCronRun && (
                       <span className="font-mono text-xs text-[#737373]">
                         Last run: {lastCronRun}
