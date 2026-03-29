@@ -94,7 +94,8 @@ async function fetchSubreddit(subreddit: string): Promise<RedditPost[]> {
 
   try {
     const response = await fetch(
-      `https://www.reddit.com/r/${subreddit}/hot.json?limit=25`
+      `https://www.reddit.com/r/${subreddit}/hot.json?limit=25`,
+      { headers: { 'User-Agent': 'web:news-aggregator:v1.0 (by /u/newsbot)' } }
     );
 
     if (!response.ok) {
