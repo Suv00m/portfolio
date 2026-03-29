@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTrendingTopics, getPostDetails, NewsTopic } from '@/lib/reddit';
 import { getTrendingHNTopics, getHNComments } from '@/lib/hackernews';
+import { getTrendingPapers } from '@/lib/papers';
 import { generateNewsArticle } from '@/lib/news-generator';
 import { createNewsArticle } from '@/lib/news';
 
@@ -14,16 +15,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch from both sources in parallel
-    const [redditTopics, hnTopics] = await Promise.all([
+    // Fetch from all sources in parallel
+    const [redditTopics, hnTopics, paperTopics] = await Promise.all([
       getTrendingTopics(5),
       getTrendingHNTopics(5),
+      getTrendingPapers(5),
     ]);
 
     // Combine and rank by engagement rate, pick top 3
     const allTopics: (NewsTopic & { engagementRate: number })[] = [
       ...redditTopics,
       ...hnTopics,
+      ...paperTopics,
     ].map((topic) => {
       const now = Date.now() / 1000;
       const ageHours = Math.max((now - topic.created_utc) / 3600, 1);
@@ -45,10 +48,12 @@ export async function GET(request: NextRequest) {
     const results: string[] = [];
 
     for (const topic of topics) {
-      let comments: string[];
+      let comments: string[] = [];
       if (topic.source === 'hackernews') {
         const storyId = parseInt(topic.permalink.split('id=')[1]);
         comments = await getHNComments(storyId);
+      } else if (topic.source === 'papers') {
+        // Papers use abstract as context, no comments to fetch
       } else {
         comments = await getPostDetails(topic.permalink);
       }

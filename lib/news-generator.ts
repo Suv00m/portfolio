@@ -75,14 +75,39 @@ export async function generateNewsArticle(
     return null;
   }
 
-  const commentsContext = comments.length > 0
+  const isResearchPaper = topic.source === 'papers';
+
+  const commentsContext = (!isResearchPaper && comments.length > 0)
     ? `\nTop community reactions:\n${comments.slice(0, 5).map((c, i) => `${i + 1}. ${c.slice(0, 300)}`).join('\n')}`
     : '';
 
   // ── STEP 1: Generate outline + metadata ──
-  const sourceLabel = topic.source === 'hackernews' ? 'Hacker News' : `r/${topic.subreddit}`;
+  const sourceLabel = topic.source === 'hackernews'
+    ? 'Hacker News'
+    : topic.source === 'papers'
+      ? 'arXiv / Papers with Code'
+      : `r/${topic.subreddit}`;
 
-  const outlinePrompt = `You are an SEO specialist. Given this trending tech topic, create an article outline.
+  const outlinePrompt = isResearchPaper
+    ? `You are an SEO specialist covering AI research. Given this recent AI/ML research paper, create an accessible news article outline.
+
+Research Paper:
+Title: ${topic.title}
+Abstract: ${topic.selftext.slice(0, 1000)}
+Source: arXiv / Papers with Code
+
+Respond in valid JSON only (no markdown fences):
+{
+  "title": "SEO headline that makes the research finding accessible, max 60 chars",
+  "slug": "3-5-word-keyword-slug",
+  "excerpt": "150-160 char meta description explaining the research breakthrough",
+  "tags": ["primary-keyword", "secondary-keyword", "research-area", "ai-research"],
+  "pexelsQuery": "2-3 word image search query",
+  "section1_heading": "What did the researchers discover or build?",
+  "section2_heading": "How does it work?",
+  "section3_heading": "Why does this matter for the industry?"
+}`
+    : `You are an SEO specialist. Given this trending tech topic, create an article outline.
 
 Topic from ${sourceLabel}:
 Title: ${topic.title}
@@ -119,7 +144,25 @@ Respond in valid JSON only (no markdown fences):
   }
 
   // ── STEP 2: Generate article body with fixed structure ──
-  const bodyPrompt = `You are a senior AI/tech journalist. Write the article body for:
+  const bodyPrompt = isResearchPaper
+    ? `You are a senior AI/tech journalist who explains research papers accessibly. Write the article body for:
+
+"${outline.title}"
+
+Research Paper: ${topic.title}
+Abstract: ${topic.selftext.slice(0, 800)}
+
+The article has a FIXED structure. Write ONLY the content for each section below. Use HTML tags (<p>, <ul>, <li>, <strong>, <em>) within each section. Keep paragraphs to 2-3 sentences. Bold key entities and terms. Explain technical concepts clearly for a developer audience.
+
+Respond in valid JSON only (no markdown fences):
+{
+  "intro": "2-3 paragraph opening hook. Explain what the paper achieves in plain language. Use <p> tags. Bold key names/terms with <strong>.",
+  "section1": "2-3 paragraphs for: ${outline.section1_heading}. Describe the key findings or system built. Use <p> tags.",
+  "section2": "2-3 paragraphs for: ${outline.section2_heading}. Explain the methodology and technical approach. Use a <ul> with 3-4 <li> bullet points for key technical details.",
+  "section3": "2-3 paragraphs for: ${outline.section3_heading}. Practical implications for developers and the industry. Use <p> tags.",
+  "closure": "1 short paragraph summarizing the key takeaway and potential real-world applications. Use <p> tags."
+}`
+    : `You are a senior AI/tech journalist. Write the article body for:
 
 "${outline.title}"
 

@@ -34,8 +34,24 @@ export default function AdminDashboard() {
   // News generation state
   const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
   const [newsCount, setNewsCount] = useState(3);
+  const [newsSources, setNewsSources] = useState<Set<string>>(new Set(["reddit", "hackernews", "papers"]));
   const [isGeneratingNews, setIsGeneratingNews] = useState(false);
   const [newsResult, setNewsResult] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  // News edit state
+  const [editingNews, setEditingNews] = useState<NewsArticle | null>(null);
+  const [editNewsForm, setEditNewsForm] = useState({
+    title: "",
+    slug: "",
+    description: "",
+    excerpt: "",
+    thumbnail: "",
+    source_subreddit: "",
+    source_urls: "",
+    tags: "",
+    created_at: "",
+  });
+  const [isSavingNews, setIsSavingNews] = useState(false);
 
   // Cron state
   const [cronConfig, setCronConfig] = useState<{
@@ -365,7 +381,7 @@ export default function AdminDashboard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ count: newsCount }),
+        body: JSON.stringify({ count: newsCount, sources: Array.from(newsSources) }),
       });
 
       const result = await response.json();
@@ -410,6 +426,60 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error("Error deleting news:", error);
       alert("Failed to delete article");
+    }
+  };
+
+  const handleEditNews = (article: NewsArticle) => {
+    setEditingNews(article);
+    setEditNewsForm({
+      title: article.title,
+      slug: article.slug,
+      description: article.description,
+      excerpt: article.excerpt,
+      thumbnail: article.thumbnail || "",
+      source_subreddit: article.source_subreddit,
+      source_urls: (article.source_urls || []).join("\n"),
+      tags: article.tags.join(", "),
+      created_at: new Date(article.created_at).toISOString().slice(0, 16),
+    });
+    window.scrollTo({ top: document.getElementById("news-edit-form")?.offsetTop || 0, behavior: "smooth" });
+  };
+
+  const handleUpdateNews = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingNews) return;
+    setIsSavingNews(true);
+
+    try {
+      const response = await fetch(`/api/news/${editingNews.slug}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          title: editNewsForm.title,
+          slug: editNewsForm.slug,
+          description: editNewsForm.description,
+          excerpt: editNewsForm.excerpt,
+          thumbnail: editNewsForm.thumbnail || null,
+          source_subreddit: editNewsForm.source_subreddit,
+          source_urls: editNewsForm.source_urls.split("\n").map((u) => u.trim()).filter(Boolean),
+          tags: editNewsForm.tags.split(",").map((t) => t.trim()).filter(Boolean),
+          created_at: new Date(editNewsForm.created_at).toISOString(),
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setEditingNews(null);
+        await fetchNewsArticles();
+      } else {
+        alert("Error: " + result.error);
+      }
+    } catch (error) {
+      console.error("Error updating news:", error);
+      alert("Failed to update article");
+    } finally {
+      setIsSavingNews(false);
     }
   };
 
@@ -958,33 +1028,34 @@ export default function AdminDashboard() {
 
             {/* Generate Controls */}
             <div className="card-brutal p-6 md:p-8">
-              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6">
-                <div>
-                  <label className="block font-display text-sm font-bold uppercase tracking-wider mb-3">
-                    Articles to Generate
-                  </label>
-                  <div className="flex items-center gap-3">
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <button
-                        key={n}
-                        type="button"
-                        onClick={() => setNewsCount(n)}
-                        className={`w-12 h-12 font-display text-lg font-bold border-3 border-[#0a0a0a] transition-all ${
-                          newsCount === n
-                            ? "bg-[#0a0a0a] text-white shadow-brutal-accent"
-                            : "bg-white text-[#0a0a0a] hover:bg-[#f5f5f5]"
-                        }`}
-                      >
-                        {n}
-                      </button>
-                    ))}
+              <div className="flex flex-col gap-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6">
+                  <div>
+                    <label className="block font-display text-sm font-bold uppercase tracking-wider mb-3">
+                      Articles to Generate
+                    </label>
+                    <div className="flex items-center gap-3">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setNewsCount(n)}
+                          className={`w-12 h-12 font-display text-lg font-bold border-3 border-[#0a0a0a] transition-all ${
+                            newsCount === n
+                              ? "bg-[#0a0a0a] text-white shadow-brutal-accent"
+                              : "bg-white text-[#0a0a0a] hover:bg-[#f5f5f5]"
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                <button
-                  onClick={handleGenerateNews}
-                  disabled={isGeneratingNews}
-                  className="btn-brutal disabled:opacity-50 disabled:cursor-not-allowed"
+                  <button
+                    onClick={handleGenerateNews}
+                    disabled={isGeneratingNews || newsSources.size === 0}
+                    className="btn-brutal disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isGeneratingNews ? (
                     <>
@@ -1003,11 +1074,45 @@ export default function AdminDashboard() {
                       GENERATE NEWS
                     </>
                   )}
-                </button>
+                  </button>
+                </div>
+
+                <div>
+                  <label className="block font-display text-sm font-bold uppercase tracking-wider mb-3">
+                    Sources
+                  </label>
+                  <div className="flex items-center gap-3">
+                    {([
+                      { key: "reddit", label: "Reddit" },
+                      { key: "hackernews", label: "Hacker News" },
+                      { key: "papers", label: "Papers" },
+                    ] as const).map(({ key, label }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => {
+                          setNewsSources((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(key)) next.delete(key);
+                            else next.add(key);
+                            return next;
+                          });
+                        }}
+                        className={`px-4 py-2 font-display text-xs font-bold uppercase tracking-wider border-3 border-[#0a0a0a] transition-all ${
+                          newsSources.has(key)
+                            ? "bg-[#0a0a0a] text-white shadow-brutal-accent"
+                            : "bg-white text-[#0a0a0a] hover:bg-[#f5f5f5]"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <p className="mt-4 text-xs text-[#737373]">
-                Fetches trending AI/tech topics from Reddit, generates articles via AI, and publishes to the news section.
+                Fetches trending AI/tech topics from selected sources, generates articles via AI, and publishes to the news section.
               </p>
 
               {newsResult && (
@@ -1160,6 +1265,143 @@ export default function AdminDashboard() {
               )}
             </div>
 
+            {/* News Edit Form */}
+            {editingNews && (
+              <div id="news-edit-form" className="card-brutal p-6 md:p-8 border-[#0066ff]">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-display text-xl font-bold tracking-tight">
+                    EDIT ARTICLE
+                  </h3>
+                  <button
+                    onClick={() => setEditingNews(null)}
+                    className="px-4 py-2 font-display text-xs font-bold uppercase tracking-wider border-2 border-[#0a0a0a] hover:bg-[#0a0a0a] hover:text-white transition-colors"
+                  >
+                    CANCEL
+                  </button>
+                </div>
+                <form onSubmit={handleUpdateNews} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
+                        Title
+                      </label>
+                      <input
+                        type="text"
+                        value={editNewsForm.title}
+                        onChange={(e) => setEditNewsForm({ ...editNewsForm, title: e.target.value })}
+                        className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
+                        Slug
+                      </label>
+                      <input
+                        type="text"
+                        value={editNewsForm.slug}
+                        onChange={(e) => setEditNewsForm({ ...editNewsForm, slug: e.target.value })}
+                        className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
+                      Excerpt
+                    </label>
+                    <input
+                      type="text"
+                      value={editNewsForm.excerpt}
+                      onChange={(e) => setEditNewsForm({ ...editNewsForm, excerpt: e.target.value })}
+                      className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent"
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
+                        Published Date
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={editNewsForm.created_at}
+                        onChange={(e) => setEditNewsForm({ ...editNewsForm, created_at: e.target.value })}
+                        className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
+                        Source
+                      </label>
+                      <input
+                        type="text"
+                        value={editNewsForm.source_subreddit}
+                        onChange={(e) => setEditNewsForm({ ...editNewsForm, source_subreddit: e.target.value })}
+                        className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
+                      Thumbnail URL
+                    </label>
+                    <input
+                      type="text"
+                      value={editNewsForm.thumbnail}
+                      onChange={(e) => setEditNewsForm({ ...editNewsForm, thumbnail: e.target.value })}
+                      className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent"
+                      placeholder="https://..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
+                      Content (HTML)
+                    </label>
+                    <textarea
+                      value={editNewsForm.description}
+                      onChange={(e) => setEditNewsForm({ ...editNewsForm, description: e.target.value })}
+                      rows={12}
+                      className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent resize-y"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
+                      Source URLs (one per line)
+                    </label>
+                    <textarea
+                      value={editNewsForm.source_urls}
+                      onChange={(e) => setEditNewsForm({ ...editNewsForm, source_urls: e.target.value })}
+                      rows={3}
+                      className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent resize-y"
+                      placeholder="https://reddit.com/..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
+                      Tags (comma-separated)
+                    </label>
+                    <input
+                      type="text"
+                      value={editNewsForm.tags}
+                      onChange={(e) => setEditNewsForm({ ...editNewsForm, tags: e.target.value })}
+                      className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSavingNews}
+                    className="px-6 py-3 bg-[#0066ff] text-white font-display text-sm font-bold uppercase tracking-wider border-3 border-[#0a0a0a] shadow-brutal hover:shadow-brutal-lg hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSavingNews ? "SAVING..." : "SAVE CHANGES"}
+                  </button>
+                </form>
+              </div>
+            )}
+
             {/* Existing News Articles */}
             <div>
               <div className="flex items-center gap-4 mb-8">
@@ -1195,7 +1437,7 @@ export default function AdminDashboard() {
                               }).replace(/\//g, ".")}
                             </span>
                             <span className="tag-brutal-accent text-xs">
-                              r/{article.source_subreddit}
+                              {article.source_subreddit === 'arXiv' ? 'arXiv' : article.source_subreddit === 'HackerNews' ? 'Hacker News' : `r/${article.source_subreddit}`}
                             </span>
                           </div>
                           <h4 className="font-display text-xl md:text-2xl font-bold tracking-tight">
@@ -1206,6 +1448,12 @@ export default function AdminDashboard() {
                           </p>
                         </div>
                         <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditNews(article)}
+                            className="px-4 py-2 bg-[#0066ff] text-white font-display text-xs font-bold uppercase tracking-wider border-2 border-[#0a0a0a] hover:bg-[#0a0a0a] transition-colors"
+                          >
+                            EDIT
+                          </button>
                           <button
                             onClick={() => handleDeleteNews(article.slug)}
                             className="px-4 py-2 bg-[#ff3d00] text-white font-display text-xs font-bold uppercase tracking-wider border-2 border-[#0a0a0a] hover:bg-[#0a0a0a] transition-colors"

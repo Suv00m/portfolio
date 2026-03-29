@@ -77,16 +77,16 @@ export default function IdeaBox({ onInsertTitle, onInsertContent }: IdeaBoxProps
   };
 
   return (
-    <div className="w-full max-w-md border border-gray-300 rounded-lg bg-white">
+    <div className="w-full max-w-md border-3 border-[#0a0a0a] bg-white shadow-brutal">
       {/* Tabs */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b-3 border-[#0a0a0a]">
         <button
           type="button"
           onClick={() => setActiveTab('ideas')}
-          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+          className={`flex-1 px-4 py-3 font-display text-sm font-bold uppercase tracking-wider transition-colors ${
             activeTab === 'ideas'
-              ? 'bg-purple-600 text-white'
-              : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+              ? 'bg-[#0a0a0a] text-white'
+              : 'bg-[#f5f5f5] text-[#737373] hover:bg-[#e5e5e5]'
           }`}
         >
           Ideas
@@ -94,10 +94,10 @@ export default function IdeaBox({ onInsertTitle, onInsertContent }: IdeaBoxProps
         <button
           type="button"
           onClick={() => setActiveTab('assist')}
-          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+          className={`flex-1 px-4 py-3 font-display text-sm font-bold uppercase tracking-wider border-l-3 border-[#0a0a0a] transition-colors ${
             activeTab === 'assist'
-              ? 'bg-purple-600 text-white'
-              : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+              ? 'bg-[#0a0a0a] text-white'
+              : 'bg-[#f5f5f5] text-[#737373] hover:bg-[#e5e5e5]'
           }`}
         >
           Writing Assistant
@@ -106,36 +106,45 @@ export default function IdeaBox({ onInsertTitle, onInsertContent }: IdeaBoxProps
 
       {/* Ideas Tab */}
       {activeTab === 'ideas' && (
-        <div className="p-4 space-y-4">
+        <div className="p-6 space-y-6">
           <button
             type="button"
             onClick={generateIdeas}
             disabled={isGeneratingIdeas}
-            className="w-full px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-4 py-3 bg-[#0066ff] text-white font-display text-sm font-bold uppercase tracking-wider border-3 border-[#0a0a0a] shadow-brutal hover:shadow-brutal-lg hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isGeneratingIdeas ? 'Generating Ideas...' : 'Generate Blog Post Ideas'}
+            {isGeneratingIdeas ? (
+              <span className="flex items-center justify-center gap-2">
+                <div className="loading-dot !w-2.5 !h-2.5 !bg-white" />
+                <div className="loading-dot !w-2.5 !h-2.5 !bg-white" />
+                <div className="loading-dot !w-2.5 !h-2.5 !bg-white" />
+                GENERATING...
+              </span>
+            ) : (
+              'Generate Blog Post Ideas'
+            )}
           </button>
 
           {ideas.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium text-gray-700">Suggested Ideas:</h3>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
+            <div className="space-y-3">
+              <h3 className="font-display text-sm font-bold uppercase tracking-wider">Suggested Ideas:</h3>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
                 {ideas.map((idea, index) => (
                   <div
                     key={index}
-                    className="p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-colors cursor-pointer"
+                    className="p-4 border-3 border-[#0a0a0a] bg-[#f5f5f5] hover:bg-[#0066ff]/10 hover:border-[#0066ff] transition-colors cursor-pointer group"
                     onClick={() => onInsertTitle?.(idea)}
                   >
-                    <p className="text-sm text-gray-800">{idea}</p>
+                    <p className="font-mono text-sm text-[#0a0a0a]">{idea}</p>
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         onInsertTitle?.(idea);
                       }}
-                      className="mt-2 text-xs text-purple-600 hover:text-purple-800 font-medium"
+                      className="mt-3 font-display text-xs font-bold uppercase tracking-wider text-[#0066ff] group-hover:text-[#ff3d00] transition-colors"
                     >
-                      Use as title →
+                      Use as title &rarr;
                     </button>
                   </div>
                 ))}
@@ -144,7 +153,7 @@ export default function IdeaBox({ onInsertTitle, onInsertContent }: IdeaBoxProps
           )}
 
           {ideas.length === 0 && !isGeneratingIdeas && (
-            <p className="text-sm text-gray-500 text-center py-4">
+            <p className="font-mono text-sm text-[#737373] text-center py-6">
               Click &quot;Generate Blog Post Ideas&quot; to get AI-powered suggestions
             </p>
           )}
@@ -153,15 +162,15 @@ export default function IdeaBox({ onInsertTitle, onInsertContent }: IdeaBoxProps
 
       {/* Writing Assistant Tab */}
       {activeTab === 'assist' && (
-        <div className="p-4 space-y-4">
+        <div className="p-6 space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
               Action
             </label>
             <select
               value={assistAction}
               onChange={(e) => setAssistAction(e.target.value as typeof assistAction)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-3 border-3 border-[#0a0a0a] font-mono text-sm bg-white focus:outline-none focus:shadow-brutal-accent"
             >
               <option value="expand">Expand</option>
               <option value="improve">Improve</option>
@@ -171,14 +180,14 @@ export default function IdeaBox({ onInsertTitle, onInsertContent }: IdeaBoxProps
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
               Content to Process
             </label>
             <textarea
               value={assistContent}
               onChange={(e) => setAssistContent(e.target.value)}
               rows={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-vertical"
+              className="w-full px-3 py-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent resize-y"
               placeholder="Paste your content here..."
             />
           </div>
@@ -187,33 +196,42 @@ export default function IdeaBox({ onInsertTitle, onInsertContent }: IdeaBoxProps
             type="button"
             onClick={handleAssist}
             disabled={isProcessing || !assistContent.trim()}
-            className="w-full px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-4 py-3 bg-[#ff3d00] text-white font-display text-sm font-bold uppercase tracking-wider border-3 border-[#0a0a0a] shadow-brutal hover:shadow-brutal-lg hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isProcessing ? 'Processing...' : `Apply ${assistAction.charAt(0).toUpperCase() + assistAction.slice(1)}`}
+            {isProcessing ? (
+              <span className="flex items-center justify-center gap-2">
+                <div className="loading-dot !w-2.5 !h-2.5 !bg-white" />
+                <div className="loading-dot !w-2.5 !h-2.5 !bg-white" />
+                <div className="loading-dot !w-2.5 !h-2.5 !bg-white" />
+                PROCESSING...
+              </span>
+            ) : (
+              `Apply ${assistAction.charAt(0).toUpperCase() + assistAction.slice(1)}`
+            )}
           </button>
 
           {assistResult && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-gray-700">Result:</h3>
+                <h3 className="font-display text-sm font-bold uppercase tracking-wider">Result:</h3>
                 <button
                   type="button"
                   onClick={() => {
                     setAssistContent(assistResult);
                     setAssistResult('');
                   }}
-                  className="text-xs text-purple-600 hover:text-purple-800 font-medium"
+                  className="font-display text-xs font-bold uppercase tracking-wider text-[#0066ff] hover:text-[#ff3d00] transition-colors"
                 >
                   Replace content
                 </button>
               </div>
-              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 max-h-64 overflow-y-auto">
-                <p className="text-sm text-gray-800 whitespace-pre-wrap">{assistResult}</p>
+              <div className="p-4 border-3 border-[#0a0a0a] bg-[#f5f5f5] max-h-64 overflow-y-auto">
+                <p className="font-mono text-sm text-[#0a0a0a] whitespace-pre-wrap">{assistResult}</p>
               </div>
               <button
                 type="button"
                 onClick={() => onInsertContent?.(assistResult)}
-                className="w-full px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
+                className="w-full px-4 py-3 bg-[#0a0a0a] text-white font-display text-sm font-bold uppercase tracking-wider border-3 border-[#0a0a0a] hover:bg-[#333] transition-colors"
               >
                 Insert into Editor
               </button>

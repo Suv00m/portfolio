@@ -218,7 +218,7 @@ export default function NewsDirectory() {
                               )}
                             </time>
                             <span className="tag-brutal-accent text-xs !py-0.5 !px-2">
-                              r/{article.source_subreddit}
+                              {article.source_subreddit === 'arXiv' ? 'arXiv' : article.source_subreddit === 'HackerNews' ? 'Hacker News' : `r/${article.source_subreddit}`}
                             </span>
                           </div>
                         </div>

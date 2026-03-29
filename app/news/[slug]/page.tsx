@@ -238,7 +238,7 @@ export default async function NewsArticlePage({ params }: Props) {
             {/* Tags & Source */}
             <div className="flex flex-wrap items-center gap-3 mt-6">
               <span className="tag-brutal-accent text-xs">
-                r/{article.source_subreddit}
+                {article.source_subreddit === 'arXiv' ? 'arXiv' : article.source_subreddit === 'HackerNews' ? 'Hacker News' : `r/${article.source_subreddit}`}
               </span>
               {article.tags.map((tag) => (
                 <span key={tag} className="tag-brutal">

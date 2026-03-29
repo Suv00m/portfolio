@@ -24,7 +24,7 @@ export const openrouter = OPENROUTER_API_KEY
  * You can change this to any model supported by OpenRouter
  * Examples: 'anthropic/claude-3.5-sonnet', 'openai/gpt-4', 'google/gemini-pro'
  */
-export const DEFAULT_MODEL = 'anthropic/claude-3.5-sonnet';
+export const DEFAULT_MODEL = 'anthropic/claude-haiku-4.5';
 
 /**
  * Model configuration for different AI features
