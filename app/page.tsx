@@ -14,13 +14,13 @@ const projects = [
   },
   {
     title: "Search",
-    desc: "Minimal semantic search over documents.",
+    desc: "grep like search tool in Rust.",
     github: "https://github.com/Suv00m/search",
     year: "2026",
   },
   {
     title: "yuj-v1",
-    desc: "Fine-tuned text generation model. QLoRA + PEFT.",
+    desc: "MoE 7B Hindi text generation model. 3.5k+ monthly downloads.",
     url: "https://huggingface.co/shuvom/yuj-v1",
     year: "2025",
   },
