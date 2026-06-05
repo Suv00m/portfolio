@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 const projects = [
   {
     title: "dotresume.org",
-    description: "AI-powered resume builder. Drop in your details, get a polished ATS-friendly PDF out.",
+    description: "Job companion. Helps you find jobs at every point of your life.",
     url: "https://dotresume.org",
     tags: ["Next.js", "AI"],
     year: "2026",

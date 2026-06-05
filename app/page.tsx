@@ -8,7 +8,7 @@ import { BlogPost } from "@/lib/types";
 const projects = [
   {
     title: "dotresume.org",
-    desc: "AI-powered resume builder.",
+    desc: "Job companion. Helps you find jobs at every point of your life.",
     url: "https://dotresume.org",
     year: "2026",
   },
