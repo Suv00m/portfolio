@@ -1,175 +1,150 @@
 "use client";
 
 import { useState } from "react";
-import { cn } from "@/lib/utils";
 
-interface NavItem {
-  label: string;
-  href: string;
-  description?: string;
-}
-
-const navItems: NavItem[] = [
-  { label: "Home", href: "/", description: "Back to base" },
+const navItems = [
+  { label: "Home",     href: "/",         description: "Back to base" },
   { label: "Services", href: "/services", description: "What I build" },
-  { label: "Blog", href: "/blog", description: "Thoughts & code" },
-  { label: "News", href: "/news", description: "AI & tech updates" },
-  { label: "Socials", href: "/socials", description: "Find me online" },
-  { label: "Contact", href: "/contact", description: "Let's talk" },
+  { label: "Projects", href: "/projects", description: "Case studies" },
+  { label: "Blog",     href: "/blog",     description: "Thoughts & code" },
+  { label: "News",     href: "/news",     description: "AI & tech updates" },
+  { label: "Socials",  href: "/socials",  description: "Find me online" },
+  { label: "Contact",  href: "/contact",  description: "Let's talk" },
 ];
 
 export default function CenterNavbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
 
   return (
     <>
-      {/* Navbar Container */}
-      <nav className="fixed right-4 top-4 z-50 md:right-8 md:top-8">
-        {/* Toggle Button */}
+      <nav className="fixed right-4 top-4 z-50 md:right-6 md:top-6">
+        {/* Toggle */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={cn(
-            "group relative flex h-14 w-14 items-center justify-center border-3 border-[#0a0a0a] bg-white transition-all duration-200",
-            isOpen
-              ? "shadow-brutal-accent"
-              : "shadow-brutal-sm hover:shadow-brutal hover:-translate-x-1 hover:-translate-y-1"
-          )}
-          style={{ borderWidth: '3px' }}
           aria-label="Toggle navigation menu"
+          style={{
+            width: "40px",
+            height: "40px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "var(--bg-subtle)",
+            border: "1px solid var(--border)",
+            borderRadius: "6px",
+            cursor: "pointer",
+            position: "relative",
+            zIndex: 1,
+          }}
         >
-          {/* Hamburger Icon */}
-          <div className="flex h-5 w-5 flex-col justify-between">
-            <span
-              className={cn(
-                "h-[3px] w-full bg-[#0a0a0a] transition-all duration-200",
-                isOpen && "translate-y-[9px] rotate-45 bg-[#ff3d00]"
-              )}
-            />
-            <span
-              className={cn(
-                "h-[3px] w-full bg-[#0a0a0a] transition-all duration-200",
-                isOpen && "opacity-0"
-              )}
-            />
-            <span
-              className={cn(
-                "h-[3px] w-full bg-[#0a0a0a] transition-all duration-200",
-                isOpen && "-translate-y-[9px] -rotate-45 bg-[#ff3d00]"
-              )}
-            />
+          <div className="flex flex-col justify-between" style={{ width: "16px", height: "12px" }}>
+            <span style={{
+              display: "block", height: "1.5px", width: "100%",
+              background: "var(--tx-2)",
+              transition: "transform 0.2s, opacity 0.2s",
+              transform: isOpen ? "translateY(5.25px) rotate(45deg)" : "none",
+            }} />
+            <span style={{
+              display: "block", height: "1.5px", width: "100%",
+              background: "var(--tx-2)",
+              transition: "opacity 0.2s",
+              opacity: isOpen ? 0 : 1,
+            }} />
+            <span style={{
+              display: "block", height: "1.5px", width: "100%",
+              background: "var(--tx-2)",
+              transition: "transform 0.2s, opacity 0.2s",
+              transform: isOpen ? "translateY(-5.25px) rotate(-45deg)" : "none",
+            }} />
           </div>
         </button>
 
-        {/* Navigation Menu */}
+        {/* Dropdown */}
         <div
-          className={cn(
-            "absolute right-0 top-0 overflow-hidden border-3 border-[#0a0a0a] bg-white transition-all duration-300 ease-out",
-            isOpen
-              ? "w-64 opacity-100 translate-x-0 translate-y-0 shadow-brutal-lg"
-              : "w-14 opacity-0 translate-x-2 -translate-y-2 pointer-events-none"
-          )}
-          style={{ borderWidth: '3px' }}
+          style={{
+            position: "absolute",
+            top: "48px",
+            right: 0,
+            width: "220px",
+            background: "var(--bg-subtle)",
+            border: "1px solid var(--border)",
+            borderRadius: "8px",
+            overflow: "hidden",
+            opacity: isOpen ? 1 : 0,
+            pointerEvents: isOpen ? "auto" : "none",
+            transform: isOpen ? "translateY(0)" : "translateY(-8px)",
+            transition: "opacity 0.18s ease, transform 0.18s ease",
+          }}
         >
-          {/* Header */}
-          <div className="border-b-3 border-[#0a0a0a] p-5 bg-[#0a0a0a]" style={{ borderBottomWidth: '3px' }}>
-            <h3 className="font-display text-lg font-black tracking-tight text-white uppercase">
-              Navigate
-            </h3>
-          </div>
-
-          {/* Navigation Items */}
-          <div className="p-2">
+          <div style={{ padding: "0.5rem" }}>
             {navItems.map((item, index) => (
               <a
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsOpen(false)}
-                onMouseEnter={() => setHoveredItem(item.label)}
-                onMouseLeave={() => setHoveredItem(null)}
-                className={cn(
-                  "group relative flex w-full items-center justify-between px-4 py-3 text-left transition-all duration-200",
-                  "hover:bg-[#f5f5f5]",
-                  "focus:outline-none focus:bg-[#f5f5f5]"
-                )}
+                onMouseEnter={() => setHovered(item.label)}
+                onMouseLeave={() => setHovered(null)}
                 style={{
-                  transitionDelay: isOpen ? `${index * 40}ms` : "0ms",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "0.5rem 0.75rem",
+                  borderRadius: "5px",
+                  background: hovered === item.label ? "var(--bg-hover)" : "transparent",
+                  textDecoration: "none",
+                  transition: "background 0.12s",
+                  transitionDelay: isOpen ? `${index * 25}ms` : "0ms",
                 }}
               >
-                {/* Content */}
-                <div className="flex flex-col">
-                  <span className={cn(
-                    "font-display text-base font-bold uppercase tracking-wide transition-all duration-200",
-                    hoveredItem === item.label
-                      ? "text-[#ff3d00]"
-                      : "text-[#0a0a0a]"
-                  )}>
+                <div>
+                  <span style={{
+                    display: "block",
+                    fontSize: "0.875rem",
+                    fontWeight: "500",
+                    color: hovered === item.label ? "var(--tx-1)" : "var(--tx-2)",
+                    transition: "color 0.12s",
+                  }}>
                     {item.label}
                   </span>
-                  {item.description && (
-                    <span className={cn(
-                      "font-mono text-xs transition-all duration-200 mt-0.5",
-                      hoveredItem === item.label
-                        ? "text-[#0a0a0a]"
-                        : "text-[#737373]"
-                    )}>
-                      {item.description}
-                    </span>
-                  )}
+                  <span style={{
+                    display: "block",
+                    fontSize: "0.6875rem",
+                    fontFamily: "var(--font-mono)",
+                    color: "var(--tx-3)",
+                    marginTop: "1px",
+                  }}>
+                    {item.description}
+                  </span>
                 </div>
-
-                {/* Arrow Icon */}
-                <svg
-                  className={cn(
-                    "h-5 w-5 transition-all duration-200",
-                    hoveredItem === item.label
-                      ? "translate-x-1 text-[#ff3d00]"
-                      : "text-[#a3a3a3]"
-                  )}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={3}
-                >
-                  <path
-                    strokeLinecap="square"
-                    strokeLinejoin="miter"
-                    d="M9 5l7 7-7 7"
-                  />
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                     style={{ color: hovered === item.label ? "var(--tx-2)" : "var(--tx-3)", flexShrink: 0, transition: "color 0.12s, transform 0.12s", transform: hovered === item.label ? "translateX(2px)" : "none" }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
-
-                {/* Hover Indicator Bar */}
-                <div
-                  className={cn(
-                    "absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-[#ff3d00] transition-all duration-200",
-                    hoveredItem === item.label
-                      ? "opacity-100"
-                      : "opacity-0"
-                  )}
-                />
               </a>
             ))}
           </div>
 
-          {/* Footer */}
-          <div className="border-t-3 border-[#0a0a0a] p-4 bg-[#f5f5f5]" style={{ borderTopWidth: '3px' }}>
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs text-[#737373] uppercase tracking-wider">{new Date().getFullYear()}</span>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <div className="h-3 w-3 bg-[#22c55e] border-2 border-[#0a0a0a]" />
-                </div>
-                <span className="font-mono text-xs font-bold text-[#0a0a0a] uppercase tracking-wider">Live</span>
-              </div>
+          <div style={{
+            borderTop: "1px solid var(--border-faint)",
+            padding: "0.5rem 1rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.6875rem", color: "var(--tx-3)" }}>
+              {new Date().getFullYear()}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "oklch(62% 0.15 145)" }} />
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.6875rem", color: "var(--tx-3)" }}>Live</span>
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-white/80"
+          className="fixed inset-0 z-40"
           onClick={() => setIsOpen(false)}
         />
       )}

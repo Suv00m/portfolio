@@ -1,148 +1,123 @@
 "use client";
 
-import CenterNavbar from "@/components/CenterNavbar";
-import { LinkPreview } from "@/components/ui/link-preview";
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
 
 const socials = [
   {
     platform: "GitHub",
-    description: "My code repositories, open-source contributions, and development projects.",
+    handle: "Suv00m",
+    description: "Code, open-source contributions, and project repos.",
     url: "https://github.com/Suv00m",
-    handle: "github.com/Suv00m",
-    color: "#0a0a0a"
+  },
+  {
+    platform: "LinkedIn",
+    handle: "shuvam1",
+    description: "Professional profile and career updates.",
+    url: "https://www.linkedin.com/in/shuvam1/",
   },
   {
     platform: "X (Twitter)",
-    description: "Quick thoughts, tech updates, and industry insights.",
-    url: "https://x.com/shuvx_",
     handle: "@shuvx_",
-    color: "#0a0a0a"
+    description: "Quick thoughts and tech updates.",
+    url: "https://x.com/shuvx_",
   },
   {
     platform: "Kaggle",
-    description: "2x Kaggle Expert - Machine learning competitions, datasets, and data science notebooks.",
+    handle: "shuvammandal121",
+    description: "2x Kaggle Expert. ML competitions and datasets.",
     url: "https://kaggle.com/shuvammandal121",
-    handle: "kaggle.com/shuvammandal121",
-    color: "#ff3d00"
   },
   {
     platform: "Hugging Face",
-    description: "AI models, datasets, and machine learning research contributions.",
+    handle: "shuvom",
+    description: "AI models and research contributions.",
     url: "https://huggingface.co/shuvom",
-    handle: "huggingface.co/shuvom",
-    color: "#0066ff"
-  }
+  },
 ];
 
 export default function Socials() {
   return (
-    <main className="min-h-screen bg-white text-[#0a0a0a]">
-      <CenterNavbar />
+    <main style={{ background: "var(--bg)", color: "var(--tx-1)", minHeight: "100vh" }}>
+      <Navbar />
 
-      {/* Socials Section */}
-      <section className="relative min-h-screen px-6 md:px-12 lg:px-24 py-32">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-dots opacity-20" />
+      <div className="mx-auto px-6 pt-32 pb-24" style={{ maxWidth: "680px" }}>
+        <header className="mb-12">
+          <h1 className="text-xl font-semibold tracking-tight mb-2">Elsewhere</h1>
+          <p className="text-sm" style={{ color: "var(--tx-2)" }}>
+            Where to find me online.
+          </p>
+        </header>
 
-        {/* Decorative shapes */}
-        <div className="absolute top-32 right-0 w-48 h-48 bg-[#ff3d00] -rotate-12 translate-x-1/2" />
-        <div className="absolute bottom-32 left-0 w-32 h-32 bg-[#0066ff] rotate-12 -translate-x-1/2" />
-
-        <div className="relative z-10 max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="mb-16">
-            <span className="tag-brutal-filled mb-6 inline-block">
-              {new Date().toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-              }).replace(/\//g, '.')}
-            </span>
-            <h1 className="font-display text-5xl md:text-7xl font-black tracking-tighter">
-              SOCIAL LINKS
-            </h1>
-            <p className="mt-6 text3xl text-[#525252] max-w-xl">
-              Connect with me across different platforms where I share my work, thoughts, and projects.
-            </p>
-          </div>
-
-          {/* Social Links Grid */}
-          <div className="grid gap-6">
-            {socials.map((social, index) => (
-              <div
-                key={index}
-                className="group card-brutal p-6 md:p-8 overflow-hidden relative"
-              >
-                {/* Accent bar */}
-                <div
-                  className="absolute left-0 top-0 bottom-0 w-2"
-                  style={{ backgroundColor: social.color }}
-                />
-
-                <div className="pl-6">
-                  <h2 className="font-display text-xl md:text-2xl font-bold tracking-tight mb-3">
-                    {social.platform}
-                  </h2>
-                  <p className="text-[#525252] leading-relaxed mb-4">
-                    {social.description}
-                  </p>
-                  <LinkPreview
-                    url={social.url}
-                    className="inline-flex items-center gap-2 font-mono font-semibold text-[#0066ff] hover:text-[#ff3d00] transition-colors duration-200 group/link"
+        <div>
+          {socials.map((s, i) => (
+            <a
+              key={s.platform}
+              href={s.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-start gap-4 py-5"
+              style={{
+                borderBottom:
+                  i < socials.length - 1 ? "1px solid var(--border-faint)" : "none",
+              }}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span
+                    className="text-sm font-medium group-hover:text-[var(--accent)] transition-colors duration-150"
+                    style={{ color: "var(--tx-1)" }}
                   >
-                    <span>{social.handle}</span>
-                    <svg className="w-4 h-4 transform group-hover/link:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="square" strokeLinejoin="miter" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                  </LinkPreview>
+                    {s.platform}
+                  </span>
+                  <span className="font-mono text-xs" style={{ color: "var(--tx-3)" }}>
+                    {s.handle}
+                  </span>
                 </div>
+                <p className="text-xs" style={{ color: "var(--tx-3)" }}>
+                  {s.description}
+                </p>
               </div>
-            ))}
-
-            {/* Email Card */}
-            <div className="card-brutal-inverse p-6 md:p-8">
-              <h2 className="font-display text-xl md:text-2xl font-bold tracking-tight mb-3">
-                Email
-              </h2>
-              <p className="text-[#a3a3a3] leading-relaxed mb-4">
-                For business inquiries, collaborations, or just to say hello.
-              </p>
-              <a
-                href="mailto:shuvammandal131@gmail.com"
-                className="inline-flex items-center gap-2 font-mono font-semibold text-[#ff3d00] hover:text-white transition-colors duration-200 group"
+              <span
+                className="text-xs pt-0.5 shrink-0 transition-colors group-hover:text-[var(--accent)]"
+                style={{ color: "var(--tx-3)" }}
               >
-                <span>shuvammandal131@gmail.com</span>
-                <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="square" strokeLinejoin="miter" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </a>
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <div className="flex justify-between items-center mt-16 pt-8 border-t-4 border-[#0a0a0a]">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-3 font-display font-bold uppercase tracking-wider text-[#525252] hover:text-[#ff3d00] transition-colors duration-200 group"
-            >
-              <svg className="w-5 h-5 transform group-hover:-translate-x-2 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="square" strokeLinejoin="miter" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
-              </svg>
-              Back to Home
-            </Link>
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-3 font-display font-bold uppercase tracking-wider text-[#525252] hover:text-[#0066ff] transition-colors duration-200 group"
-            >
-              Contact
-              <svg className="w-5 h-5 transform group-hover:translate-x-2 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="square" strokeLinejoin="miter" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </Link>
-          </div>
+                →
+              </span>
+            </a>
+          ))}
         </div>
-      </section>
+
+        {/* Email */}
+        <section
+          className="mt-8 pt-6"
+          style={{ borderTop: "1px solid var(--border-faint)" }}
+        >
+          <p
+            className="text-xs font-medium uppercase mb-3"
+            style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}
+          >
+            Email
+          </p>
+          <a
+            href="mailto:shuvammandal131@gmail.com"
+            className="text-sm transition-colors hover:text-[var(--accent)]"
+            style={{ color: "var(--tx-2)" }}
+          >
+            shuvammandal131@gmail.com
+          </a>
+        </section>
+
+        <div className="mt-12 pt-6" style={{ borderTop: "1px solid var(--border-faint)" }}>
+          <Link
+            href="/"
+            className="text-sm transition-colors hover:text-[var(--accent)]"
+            style={{ color: "var(--tx-3)" }}
+          >
+            ← Home
+          </Link>
+        </div>
+      </div>
     </main>
   );
 }

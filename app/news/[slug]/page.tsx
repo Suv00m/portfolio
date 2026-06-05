@@ -1,9 +1,11 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import CenterNavbar from "@/components/CenterNavbar";
+import Navbar from "@/components/Navbar";
 import { getNewsArticleBySlug, searchByTags } from "@/lib/news";
 import { NewsArticle } from "@/lib/types";
+import ReactionBar from "@/components/ReactionBar";
+import ViewCounter from "@/components/ViewCounter";
 
 // Post-process HTML to fix missing tags from LLM output
 function processNewsHtml(html: string): string {
@@ -187,42 +189,24 @@ export default async function NewsArticlePage({ params }: Props) {
       : [];
 
   return (
-    <main className="min-h-screen bg-white text-[#0a0a0a]">
-      <CenterNavbar />
+    <main style={{ background: "var(--bg)", color: "var(--tx-1)", minHeight: "100vh" }}>
+      <Navbar />
       <ArticleJsonLd article={article} />
 
-      <section className="relative px-6 md:px-12 lg:px-24 py-32">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-dots opacity-10" />
-
-        {/* Decorative shape */}
-        <div className="absolute top-32 right-0 w-64 h-64 bg-[#0066ff] -rotate-12 translate-x-1/2 hidden lg:block" />
-
-        <article className="relative z-10 max-w-4xl mx-auto">
-          {/* Header */}
-          <header className="mb-12">
-            <div className="flex items-center justify-between mb-8">
-              <Link
-                href="/news"
-                className="inline-flex items-center gap-2 font-display font-bold uppercase tracking-wider text-[#737373] hover:text-[#ff3d00] transition-colors duration-200 group"
-              >
-                <svg
-                  className="w-4 h-4 transform group-hover:-translate-x-2 transition-transform"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={3}
-                >
-                  <path
-                    strokeLinecap="square"
-                    strokeLinejoin="miter"
-                    d="M7 16l-4-4m0 0l4-4m-4 4h18"
-                  />
-                </svg>
-                Back to News
-              </Link>
-
-              <time className="tag-brutal-accent">
+      <div className="mx-auto px-6 pt-28 pb-24" style={{ maxWidth: "680px" }}>
+        <article>
+          {/* Back + meta */}
+          <div className="flex items-center justify-between mb-8">
+            <Link
+              href="/news"
+              className="text-sm transition-colors hover:text-[var(--accent)]"
+              style={{ color: "var(--tx-3)" }}
+            >
+              ← News
+            </Link>
+            <div className="flex items-center gap-4">
+              <ViewCounter pagePath={`/news/${article.slug}`} />
+              <time className="font-mono text-xs" style={{ color: "var(--tx-3)" }}>
                 {new Date(article.created_at).toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "long",
@@ -230,154 +214,170 @@ export default async function NewsArticlePage({ params }: Props) {
                 })}
               </time>
             </div>
+          </div>
 
-            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter leading-[1.1]">
-              {article.title}
-            </h1>
-
-            {/* Tags & Source */}
-            <div className="flex flex-wrap items-center gap-3 mt-6">
-              <span className="tag-brutal-accent text-xs">
-                {article.source_subreddit === 'arXiv' ? 'arXiv' : article.source_subreddit === 'HackerNews' ? 'Hacker News' : `r/${article.source_subreddit}`}
+          {/* Header */}
+          <header className="mb-10">
+            <div className="flex flex-wrap gap-2 mb-4">
+              <span
+                className="font-mono text-xs px-2 py-0.5 rounded"
+                style={{
+                  background: "color-mix(in oklch, var(--accent) 15%, transparent)",
+                  color: "var(--accent)",
+                  border: "1px solid color-mix(in oklch, var(--accent) 30%, transparent)",
+                }}
+              >
+                {article.source_subreddit === "arXiv"
+                  ? "arXiv"
+                  : article.source_subreddit === "HackerNews"
+                  ? "Hacker News"
+                  : `r/${article.source_subreddit}`}
               </span>
               {article.tags.map((tag) => (
-                <span key={tag} className="tag-brutal">
+                <span
+                  key={tag}
+                  className="font-mono text-xs px-2 py-0.5 rounded"
+                  style={{
+                    background: "var(--bg-subtle)",
+                    color: "var(--tx-3)",
+                    border: "1px solid var(--border-faint)",
+                  }}
+                >
                   {tag}
                 </span>
               ))}
             </div>
-          </header>
 
-          {/* Thumbnail */}
-          {article.thumbnail && (
-            <div className="mb-12 stacked-image">
+            <h1
+              className="text-2xl font-semibold leading-snug tracking-tight mb-4"
+              style={{ color: "var(--tx-1)" }}
+            >
+              {article.title}
+            </h1>
+
+            {article.thumbnail && (
               <img
                 src={article.thumbnail}
                 alt={article.title}
-                className="w-full h-80 md:h-[500px] object-cover border-3 border-[#0a0a0a]"
-                style={{ borderWidth: "3px" }}
+                className="w-full rounded-md mt-6"
+                style={{
+                  aspectRatio: "16/9",
+                  objectFit: "cover",
+                  border: "1px solid var(--border-faint)",
+                }}
               />
-            </div>
-          )}
+            )}
+          </header>
 
-          {/* Article Content */}
-          <div className="mb-16">
-            <div
-              className="news-article-content prose prose-lg max-w-none prose-headings:font-display prose-headings:font-bold prose-headings:tracking-tight prose-p:text-zinc-600 prose-p:leading-relaxed prose-a:text-blue-600 prose-a:underline hover:prose-a:text-orange-500 prose-strong:text-zinc-900 prose-code:bg-zinc-100 prose-code:text-zinc-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none prose-img:rounded-lg prose-blockquote:border-zinc-200 prose-blockquote:text-zinc-600 prose-li:marker:text-orange-500 [&_h2]:text-zinc-900 [&_h3]:text-orange-500"
-              dangerouslySetInnerHTML={{ __html: processNewsHtml(article.description) }}
-            />
-          </div>
+          {/* Content */}
+          <div
+            className="news-article-content article-body"
+            dangerouslySetInnerHTML={{ __html: processNewsHtml(article.description) }}
+          />
 
-          {/* Source Attribution */}
+          {/* Sources */}
           {article.source_urls.length > 0 && (
-            <div className="mb-12 p-6 bg-[#f5f5f5] border-3 border-[#0a0a0a]" style={{ borderWidth: "3px" }}>
-              <h3 className="font-display text-sm font-bold uppercase tracking-wider mb-3 text-[#737373]">
+            <section
+              className="mt-10 pt-6"
+              style={{ borderTop: "1px solid var(--border-faint)" }}
+            >
+              <p
+                className="text-xs font-medium uppercase mb-3"
+                style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}
+              >
                 Source
-              </h3>
+              </p>
               {article.source_urls.map((url, i) => (
                 <a
                   key={i}
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block font-mono text-sm text-[#0066ff] hover:text-[#ff3d00] transition-colors truncate"
+                  className="block font-mono text-xs mb-1 truncate transition-colors hover:text-[var(--accent)]"
+                  style={{ color: "var(--tx-2)" }}
                 >
                   {url}
                 </a>
               ))}
-            </div>
+            </section>
           )}
 
-          {/* CTA Banner */}
-          <div className="mb-16 card-brutal-inverse p-8 md:p-12 text-center">
-            <h2 className="font-display text-2xl md:text-3xl font-black tracking-tight mb-4">
-              Need AI Solutions?
-            </h2>
-            <p className="text-[#a3a3a3] mb-6 max-w-lg mx-auto">
-              From custom AI integrations to full-stack development, let&apos;s build something great together.
-            </p>
-            <Link href="/contact" className="btn-brutal-outline !bg-white !text-[#0a0a0a]">
-              Get in Touch
-            </Link>
-          </div>
-
-          {/* Related Articles */}
+          {/* Related */}
           {relatedArticles.length > 0 && (
-            <div className="mb-16">
-              <h2 className="font-display text-2xl font-bold tracking-tight mb-6">
-                Related Articles
-              </h2>
-              <div className="grid md:grid-cols-2 gap-6">
-                {relatedArticles.slice(0, 3).map((related) => (
+            <section
+              className="mt-10 pt-6"
+              style={{ borderTop: "1px solid var(--border-faint)" }}
+            >
+              <p
+                className="text-xs font-medium uppercase mb-4"
+                style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}
+              >
+                Related
+              </p>
+              <div className="space-y-0">
+                {relatedArticles.slice(0, 3).map((related, i) => (
                   <Link
                     key={related.id}
                     href={`/news/${related.slug}`}
-                    className="group card-brutal p-6"
+                    className="group flex items-start gap-4 py-3"
+                    style={{
+                      borderBottom:
+                        i < Math.min(relatedArticles.length, 3) - 1
+                          ? "1px solid var(--border-faint)"
+                          : "none",
+                    }}
                   >
-                    <time className="font-mono text-xs text-[#737373] uppercase tracking-wider">
-                      {new Date(related.created_at).toLocaleDateString(
-                        "en-US",
-                        {
-                          month: "short",
-                          day: "numeric",
-                        }
-                      )}
+                    <time
+                      className="font-mono text-xs pt-0.5 shrink-0"
+                      style={{ color: "var(--tx-3)", minWidth: "4rem" }}
+                    >
+                      {new Date(related.created_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
                     </time>
-                    <h3 className="font-display text-lg font-bold mt-2 group-hover:text-[#ff3d00] transition-colors">
+                    <p
+                      className="text-sm group-hover:text-[var(--accent)] transition-colors duration-150"
+                      style={{ color: "var(--tx-1)" }}
+                    >
                       {related.title}
-                    </h3>
-                    <p className="text-sm text-[#737373] mt-2 line-clamp-2">
-                      {related.excerpt}
                     </p>
                   </Link>
                 ))}
               </div>
-            </div>
+            </section>
           )}
 
-          {/* Navigation */}
-          <div className="flex justify-between items-center pt-8 border-t-4 border-[#0a0a0a]">
+          {/* Reactions */}
+          <div
+            className="mt-10 pt-6"
+            style={{ borderTop: "1px solid var(--border-faint)" }}
+          >
+            <ReactionBar pagePath={`/news/${article.slug}`} />
+          </div>
+
+          {/* Nav */}
+          <div
+            className="mt-8 pt-6 flex items-center justify-between"
+            style={{ borderTop: "1px solid var(--border-faint)" }}
+          >
             <Link
               href="/news"
-              className="inline-flex items-center gap-2 font-display font-bold uppercase tracking-wider text-[#525252] hover:text-[#ff3d00] transition-colors duration-200 group"
+              className="text-sm transition-colors hover:text-[var(--accent)]"
+              style={{ color: "var(--tx-3)" }}
             >
-              <svg
-                className="w-5 h-5 transform group-hover:-translate-x-2 transition-transform"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={3}
-              >
-                <path
-                  strokeLinecap="square"
-                  strokeLinejoin="miter"
-                  d="M7 16l-4-4m0 0l4-4m-4 4h18"
-                />
-              </svg>
-              All News
+              ← All news
             </Link>
             <Link
               href="/"
-              className="inline-flex items-center gap-2 font-display font-bold uppercase tracking-wider text-[#525252] hover:text-[#0066ff] transition-colors duration-200 group"
+              className="text-sm transition-colors hover:text-[var(--accent)]"
+              style={{ color: "var(--tx-3)" }}
             >
-              Home
-              <svg
-                className="w-5 h-5 transform group-hover:translate-x-2 transition-transform"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={3}
-              >
-                <path
-                  strokeLinecap="square"
-                  strokeLinejoin="miter"
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
+              Home →
             </Link>
           </div>
         </article>
-      </section>
+      </div>
     </main>
   );
 }

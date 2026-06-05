@@ -1,124 +1,209 @@
 "use client";
 
-import { LinkPreview } from "@/components/ui/link-preview";
-import CenterNavbar from "@/components/CenterNavbar";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Navbar from "@/components/Navbar";
+import { BlogPost } from "@/lib/types";
+
+const projects = [
+  {
+    title: "dotresume.org",
+    desc: "AI-powered resume builder.",
+    url: "https://dotresume.org",
+    year: "2026",
+  },
+  {
+    title: "Search",
+    desc: "Minimal semantic search over documents.",
+    github: "https://github.com/Suv00m/search",
+    year: "2026",
+  },
+  {
+    title: "yuj-v1",
+    desc: "Fine-tuned text generation model. QLoRA + PEFT.",
+    url: "https://huggingface.co/shuvom/yuj-v1",
+    year: "2025",
+  },
+  {
+    title: "behooked.co",
+    desc: "AI content automation. $0 to $1k MRR in 3 months.",
+    url: "https://behooked.co",
+    year: "2024",
+  },
+];
+
+const socials = [
+  { label: "GitHub",   url: "https://github.com/Suv00m" },
+  { label: "LinkedIn", url: "https://www.linkedin.com/in/shuvam1/" },
+  { label: "Twitter",  url: "https://x.com/shuvx_" },
+  { label: "Kaggle",   url: "https://kaggle.com/shuvammandal121" },
+];
 
 export default function Home() {
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+
+  useEffect(() => {
+    fetch("/api/blogs")
+      .then((r) => r.json())
+      .then((d) => d.success && setPosts(d.data.slice(0, 3)))
+      .catch(() => {});
+  }, []);
+
   return (
-    <main className="min-h-screen bg-white text-[#0a0a0a] overflow-hidden">
-      <CenterNavbar />
+    <main style={{ background: "var(--bg)", color: "var(--tx-1)", minHeight: "100vh" }}>
+      <Navbar />
 
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex flex-col justify-center px-6 md:px-12 lg:px-24 py-32">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-dots opacity-30" />
+      <div className="mx-auto px-6 pt-32 pb-24" style={{ maxWidth: "680px" }}>
+        {/* Intro */}
+        <section className="mb-16">
+          <h1 className="text-xl font-semibold tracking-tight mb-1">
+            Shuvam Mandal
+          </h1>
+          <p className="text-sm mb-6" style={{ color: "var(--tx-2)" }}>
+            Engineer. Builder.
+          </p>
+          <p className="text-sm leading-relaxed" style={{ color: "var(--tx-2)", maxWidth: "52ch" }}>
+            I build software and AI products. Growing{" "}
+            <a
+              href="https://behooked.co"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors duration-150"
+              style={{ color: "var(--accent)" }}
+            >
+              behooked.co
+            </a>{" "}
+            from $0 to $1k MRR in 3 months. 2x Kaggle Expert.
+            Based in India.
+          </p>
+        </section>
 
-        {/* Large decorative shapes - positioned to not overlap content */}
-        <div className="absolute top-20 right-0 w-64 h-64 md:w-96 md:h-96 bg-[#ff3d00] -rotate-12 translate-x-1/2 z-0" />
-        <div className="absolute -bottom-20 left-0 w-48 h-48 md:w-72 md:h-72 bg-[#0066ff] rotate-6 -translate-x-2/3 z-0" />
-        <div className="absolute top-1/2 right-1/4 w-32 h-32 border-[6px] border-[#0a0a0a] rotate-45 hidden lg:block z-0" />
-
-        <div className="relative z-10 max-w-6xl">
-          {/* Date Badge */}
-          <div className="mb-8 animate-reveal">
-            <span className="tag-brutal-filled">
-              {new Date().toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-              }).replace(/\//g, '.')}
-            </span>
-          </div>
-
-          {/* Main Heading */}
-          <div className="mb-12">
-            <h1 className="font-display text-6xl md:text-8xl lg:text-[10rem] font-black tracking-tighter leading-[0.85] animate-reveal animate-reveal-delay-1">
-              <span className="block">SHUVAM</span>
-              <span className="block text-stroke-only">MANDAL</span>
-            </h1>
-            <style jsx>{`
-              .text-stroke-only {
-                -webkit-text-stroke: 4px #0a0a0a;
-                -webkit-text-fill-color: transparent;
-              }
-              @media (min-width: 768px) {
-                .text-stroke-only {
-                  -webkit-text-stroke: 6px #0a0a0a;
-                }
-              }
-            `}</style>
-            <div className="mt-8 flex flex-wrap items-center gap-4 animate-reveal animate-reveal-delay-2">
-              <span className="text-xl md:text-2xl font-display font-bold">Engineer</span>
-              <span className="w-4 h-4 bg-[#ff3d00] rotate-45" />
-              <span className="text-xl md:text-2xl font-display font-bold">Builder</span>
-              <span className="w-4 h-4 bg-[#0066ff] rotate-45" />
-              <span className="text-xl md:text-2xl font-display font-bold">Creator</span>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="mb-16 space-y-8 max-w-2xl animate-reveal animate-reveal-delay-3">
-            <p className="text-lg md:text-xl leading-relaxed text-[#525252]">
-              I&apos;m an engineer from India who builds things that live on the internet.
-              I play with <span className="font-bold text-[#ff3d00]">data</span> and create
-              solutions that actually <span className="font-bold text-[#0066ff]">help people</span>.
-            </p>
-
-            <p className="text-lg md:text-xl leading-relaxed text-[#525252]">
-              Currently building{" "}
-              <LinkPreview
-                url="https://behooked.co"
-                className="font-bold text-[#ff3d00] link-underline link-underline-accent"
+        {/* Work */}
+        <section className="mb-16">
+          <p
+            className="text-xs font-medium uppercase mb-4"
+            style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}
+          >
+            Work
+          </p>
+          <div>
+            {projects.map((p) => (
+              <a
+                key={p.title}
+                href={(p as { url?: string; github?: string }).url || (p as { url?: string; github?: string }).github || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-baseline gap-3 py-3"
+                style={{ borderBottom: "1px solid var(--border-faint)" }}
               >
-                behooked.co
-              </LinkPreview>
-              {" "}&mdash; a startup that grew from{" "}
-              <span className="font-bold text-[#0a0a0a] underline decoration-4 decoration-[#ff3d00] underline-offset-4">
-                $0 to $1,000 MRR
-              </span>
-              {" "}in just 3 months after launch.
-            </p>
-
-            <p className="text-lg md:text-xl leading-relaxed text-[#525252]">
-              <span className="inline-flex items-center gap-2">
-                <span className="tag-brutal-accent">2x Kaggle Expert</span>
-              </span>
-              {" "}recognized for excellence in machine learning and data analysis.
-            </p>
+                <span
+                  className="font-mono text-xs shrink-0 w-10"
+                  style={{ color: "var(--tx-3)" }}
+                >
+                  {p.year}
+                </span>
+                <span className="flex-1 min-w-0 flex flex-wrap items-baseline gap-x-2">
+                  <span
+                    className="text-sm group-hover:text-[var(--accent)] transition-colors duration-150"
+                    style={{ color: "var(--tx-1)" }}
+                  >
+                    {p.title}
+                  </span>
+                  <span className="text-sm" style={{ color: "var(--tx-3)" }}>
+                    {p.desc}
+                  </span>
+                </span>
+              </a>
+            ))}
           </div>
+          <Link
+            href="/projects"
+            className="inline-block mt-5 text-xs transition-colors duration-150 hover:text-[var(--accent)]"
+            style={{ color: "var(--tx-3)" }}
+          >
+            All projects →
+          </Link>
+        </section>
 
-          {/* CTA */}
-          <div className="flex flex-wrap gap-4 animate-reveal animate-reveal-delay-4">
-            <a href="/contact" className="btn-brutal">
-              Let&apos;s Connect
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="square" strokeLinejoin="miter" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </a>
-            <a href="/blog" className="btn-brutal-outline">
-              Read Blog
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* Marquee Section */}
-      <section className="relative py-8 bg-[#0a0a0a] text-white overflow-hidden border-y-4 border-[#0a0a0a]">
-        <div className="flex animate-marquee whitespace-nowrap">
-          {[...Array(2)].map((_, i) => (
-            <div key={i} className="flex items-center gap-8 px-4">
-              <span className="font-display text-2xl md:text-4xl font-black tracking-tight">WEB DEVELOPMENT</span>
-              <span className="w-4 h-4 bg-[#ff3d00] rotate-45" />
-              <span className="font-display text-2xl md:text-4xl font-black tracking-tight">MACHINE LEARNING</span>
-              <span className="w-4 h-4 bg-[#0066ff] rotate-45" />
-              <span className="font-display text-2xl md:text-4xl font-black tracking-tight">DATA SCIENCE</span>
-              <span className="w-4 h-4 bg-[#ff3d00] rotate-45" />
-              <span className="font-display text-2xl md:text-4xl font-black tracking-tight">PRODUCT STRATEGY</span>
-              <span className="w-4 h-4 bg-[#0066ff] rotate-45" />
+        {/* Writing */}
+        <section className="mb-16">
+          <p
+            className="text-xs font-medium uppercase mb-4"
+            style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}
+          >
+            Writing
+          </p>
+          {posts.length > 0 ? (
+            <div>
+              {posts.map((post) => (
+                <Link
+                  key={post.id}
+                  href={`/blog/${post.id}`}
+                  className="group flex items-baseline gap-3 py-3"
+                  style={{ borderBottom: "1px solid var(--border-faint)" }}
+                >
+                  <span
+                    className="font-mono text-xs shrink-0"
+                    style={{ color: "var(--tx-3)", minWidth: "5.5rem" }}
+                  >
+                    {new Date(post.created_at).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>
+                  <span
+                    className="text-sm group-hover:text-[var(--accent)] transition-colors duration-150"
+                    style={{ color: "var(--tx-1)" }}
+                  >
+                    {post.title}
+                  </span>
+                </Link>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+          ) : (
+            <p className="text-sm" style={{ color: "var(--tx-3)" }}>—</p>
+          )}
+          <Link
+            href="/blog"
+            className="inline-block mt-5 text-xs transition-colors duration-150 hover:text-[var(--accent)]"
+            style={{ color: "var(--tx-3)" }}
+          >
+            All posts →
+          </Link>
+        </section>
+
+        {/* Elsewhere */}
+        <section>
+          <p
+            className="text-xs font-medium uppercase mb-4"
+            style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}
+          >
+            Elsewhere
+          </p>
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            {socials.map((s) => (
+              <a
+                key={s.label}
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm transition-colors duration-150 hover:text-[var(--accent)]"
+                style={{ color: "var(--tx-2)" }}
+              >
+                {s.label}
+              </a>
+            ))}
+            <a
+              href="mailto:shuvammandal131@gmail.com"
+              className="text-sm transition-colors duration-150 hover:text-[var(--accent)]"
+              style={{ color: "var(--tx-2)" }}
+            >
+              Email
+            </a>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

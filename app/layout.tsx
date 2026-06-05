@@ -1,32 +1,27 @@
 import type { Metadata } from "next";
-import { Unbounded, Syne, JetBrains_Mono } from "next/font/google";
+import { Figtree, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import PrismLoader from "@/components/PrismLoader";
+import CommandPalette from "@/components/CommandPalette";
 
-const unbounded = Unbounded({
-  variable: "--font-display",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["400", "500", "600", "700", "800", "900"],
-});
-
-const syne = Syne({
+const figtree = Figtree({
   variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["300", "400", "500", "600", "700", "800"],
 });
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
   display: "swap",
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://shuvam.xyz'),
-  title: "shuv's site",
-  description: "Shuvam Mandal's Personal Website",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://shuvam.xyz"),
+  title: "Shuvam Mandal",
+  description: "Engineer. Building software and AI products.",
   icons: {
     icon: "/favicon.svg",
   },
@@ -39,10 +34,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${unbounded.variable} ${syne.variable} ${jetbrainsMono.variable} antialiased`}
-      >
+      <body className={`${figtree.variable} ${jetbrainsMono.variable} antialiased`}>
         <PrismLoader />
+        <CommandPalette />
         {children}
       </body>
     </html>

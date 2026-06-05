@@ -9,6 +9,7 @@ export interface BlogPost {
   description: string; // HTML content from rich text editor
   thumbnail?: string; // URL to thumbnail image
   links?: BlogLink[];
+  tags?: string[];
   created_at: string;
   updated_at: string;
 }
@@ -18,6 +19,27 @@ export interface CreateBlogPost {
   description: string; // HTML content from rich text editor
   thumbnail?: string; // URL to thumbnail image
   links?: BlogLink[];
+  tags?: string[];
+}
+
+export interface ReactionCounts {
+  like: number;
+  love: number;
+  fire: number;
+  think: number;
+}
+
+export type ReactionType = keyof ReactionCounts;
+
+export interface Project {
+  title: string;
+  description: string;
+  url?: string;
+  github?: string;
+  thumbnail?: string;
+  tags: string[];
+  color: string;
+  featured?: boolean;
 }
 
 export interface NewsArticle {

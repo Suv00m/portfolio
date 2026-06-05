@@ -1,144 +1,104 @@
 "use client";
 
-import CenterNavbar from "@/components/CenterNavbar";
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
 
 const services = [
   {
-    title: "Web Development",
-    description: "Building modern, responsive, and high-performance web applications using cutting-edge technologies. From sleek landing pages to complex full-stack applications.",
-    tags: ["Next.js", "React", "TypeScript", "Node.js"],
-    color: "#ff3d00"
+    title: "Full-stack development",
+    description:
+      "End-to-end web applications: landing pages to production SaaS. Next.js, React, Node.js, Python backends. I ship fast and build things that hold up.",
+    tags: ["Next.js", "React", "TypeScript", "Python", "Node.js"],
   },
   {
-    title: "Machine Learning & Data Science",
-    description: "Leveraging data to build intelligent systems and provide actionable insights. From predictive models to deep learning solutions that drive real business value.",
-    tags: ["Python", "TensorFlow", "PyTorch", "Kaggle"],
-    color: "#0066ff"
+    title: "ML and data science",
+    description:
+      "Predictive models, LLM integrations, data pipelines. 2x Kaggle Expert. I work on problems where the data is messy and the goal is real.",
+    tags: ["Python", "TensorFlow", "PyTorch", "LLMs", "Data Pipelines"],
   },
   {
-    title: "Product Strategy",
-    description: "Helping startups go from zero to profitable by focusing on user needs and rapid iteration. Proven track record of $0 to $1,000+ MRR launches.",
-    tags: ["MVP", "Growth", "Analytics", "UX"],
-    color: "#0a0a0a"
-  }
+    title: "Product strategy",
+    description:
+      "Helping early-stage products find their path. I focus on what actually moves the needle: user clarity, fast iteration, and shipping things people use.",
+    tags: ["MVP", "Growth", "UX", "Analytics"],
+  },
 ];
 
 export default function Services() {
   return (
-    <main className="min-h-screen bg-white text-[#0a0a0a]">
-      <CenterNavbar />
+    <main style={{ background: "var(--bg)", color: "var(--tx-1)", minHeight: "100vh" }}>
+      <Navbar />
 
-      {/* Services Section */}
-      <section className="relative min-h-screen px-6 md:px-12 lg:px-24 py-32">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-dots opacity-20" />
+      <div className="mx-auto px-6 pt-32 pb-24" style={{ maxWidth: "680px" }}>
+        <header className="mb-12">
+          <h1 className="text-xl font-semibold tracking-tight mb-2">Services</h1>
+          <p className="text-sm" style={{ color: "var(--tx-2)" }}>
+            What I do for clients and collaborators.
+          </p>
+        </header>
 
-        {/* Decorative shapes */}
-        <div className="absolute top-1/4 right-0 w-64 h-64 bg-[#ff3d00] -rotate-12 translate-x-1/2" />
-        <div className="absolute bottom-1/4 left-0 w-48 h-48 bg-[#0066ff] rotate-12 -translate-x-1/2" />
-
-        <div className="relative z-10 max-w-5xl mx-auto">
-          {/* Header */}
-          <div className="mb-20">
-            <span className="tag-brutal mb-6 inline-block">
-              What I Do
-            </span>
-            <h1 className="font-display text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter">
-              SERVICES
-            </h1>
-            <p className="mt-6 text-xl text-[#525252] max-w-2xl">
-              Professional offerings tailored to help you build, grow, and optimize your digital presence.
-            </p>
-          </div>
-
-          {/* Services Grid */}
-          <div className="grid gap-8">
-            {services.map((service, index) => (
-              <div
-                key={index}
-                className="group relative card-brutal p-8 md:p-10 overflow-hidden"
-              >
-                {/* Left Accent Bar */}
-                <div
-                  className="absolute left-0 top-0 bottom-0 w-2"
-                  style={{ backgroundColor: service.color }}
-                />
-
-                {/* Number */}
-                <div className="absolute -top-4 right-4 md:top-6 md:right-8 font-display text-7xl md:text-8xl font-black text-[#f5f5f5] select-none">
-                  {String(index + 1).padStart(2, '0')}
-                </div>
-
-                <div className="relative pl-6">
-                  {/* Title */}
-                  <h3
-                    className="font-display text-2xl md:text-3xl font-bold tracking-tight mb-4"
-                    style={{ color: service.color }}
-                  >
-                    {service.title}
-                  </h3>
-
-                  {/* Description */}
-                  <p className="text-[#525252] text-lg leading-relaxed mb-6 max-w-2xl">
-                    {service.description}
-                  </p>
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-2">
-                    {service.tags.map((tag, tagIndex) => (
-                      <span
-                        key={tagIndex}
-                        className="tag-brutal"
-                        style={{
-                          borderColor: service.color,
-                          color: service.color,
-                        }}
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* CTA Section */}
-          <div className="mt-20 card-brutal-inverse p-8 md:p-12 text-center">
-            <h2 className="font-display text-2xl md:text-3xl font-bold tracking-tight mb-4">
-              Ready to build something?
-            </h2>
-            <p className="text-[#a3a3a3] text-lg mb-8 max-w-xl mx-auto">
-              Let&apos;s discuss your project and explore how we can work together to bring your vision to life.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Link href="/contact" className="btn-brutal bg-[#ff3d00] border-[#ff3d00] hover:bg-white hover:text-[#ff3d00]">
-                Schedule a Call
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="square" strokeLinejoin="miter" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
-              <Link href="/socials" className="btn-brutal-outline bg-transparent text-white border-white hover:bg-white hover:text-[#0a0a0a] hover:shadow-none">
-                View Socials
-              </Link>
-            </div>
-          </div>
-
-          {/* Back Navigation */}
-          <div className="mt-20 pt-8 border-t-4 border-[#0a0a0a]">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-3 font-display font-bold uppercase tracking-wider text-[#525252] hover:text-[#ff3d00] transition-colors duration-200 group"
+        <div>
+          {services.map((s, i) => (
+            <section
+              key={s.title}
+              className="py-8"
+              style={{
+                borderBottom:
+                  i < services.length - 1 ? "1px solid var(--border-faint)" : "none",
+              }}
             >
-              <svg className="w-5 h-5 transform group-hover:-translate-x-2 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="square" strokeLinejoin="miter" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
-              </svg>
-              Back to Home
-            </Link>
-          </div>
+              <h2 className="text-sm font-semibold mb-3" style={{ color: "var(--tx-1)" }}>
+                {s.title}
+              </h2>
+              <p className="text-sm leading-relaxed mb-4" style={{ color: "var(--tx-2)" }}>
+                {s.description}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {s.tags.map((t) => (
+                  <span
+                    key={t}
+                    className="font-mono text-xs px-2 py-0.5 rounded"
+                    style={{
+                      background: "var(--bg-subtle)",
+                      color: "var(--tx-3)",
+                      border: "1px solid var(--border-faint)",
+                    }}
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
-      </section>
+
+        {/* CTA */}
+        <section
+          className="mt-12 pt-8"
+          style={{ borderTop: "1px solid var(--border-faint)" }}
+        >
+          <p className="text-sm mb-4" style={{ color: "var(--tx-2)" }}>
+            Have something in mind?
+          </p>
+          <Link
+            href="/contact"
+            className="text-sm transition-colors hover:text-[var(--accent-hi)]"
+            style={{ color: "var(--accent)" }}
+          >
+            Schedule a call →
+          </Link>
+        </section>
+
+        <div className="mt-12 pt-6" style={{ borderTop: "1px solid var(--border-faint)" }}>
+          <Link
+            href="/"
+            className="text-sm transition-colors hover:text-[var(--accent)]"
+            style={{ color: "var(--tx-3)" }}
+          >
+            ← Home
+          </Link>
+        </div>
+      </div>
     </main>
   );
 }

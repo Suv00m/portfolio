@@ -10,6 +10,83 @@ import { BlogPost, BlogLink, NewsArticle } from "@/lib/types";
 import { processEmbedContent } from "@/lib/embed-utils";
 import { initializeCopyButtons } from "@/lib/code-copy-utils";
 
+const ERR  = "oklch(62% 0.18 22)";
+const OK   = "oklch(62% 0.15 145)";
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  background: "var(--bg-hover)",
+  border: "1px solid var(--border)",
+  color: "var(--tx-1)",
+  borderRadius: "4px",
+  padding: "0.4rem 0.625rem",
+  fontSize: "0.8125rem",
+  outline: "none",
+};
+
+const monoInputStyle: React.CSSProperties = { ...inputStyle, fontFamily: "var(--font-mono)" };
+
+const btnPrimary: React.CSSProperties = {
+  background: "var(--accent)",
+  color: "var(--bg)",
+  border: "none",
+  borderRadius: "4px",
+  padding: "0.5rem 1.25rem",
+  fontSize: "0.875rem",
+  fontWeight: "500",
+  cursor: "pointer",
+};
+
+const btnSecondary: React.CSSProperties = {
+  background: "transparent",
+  border: "1px solid var(--border)",
+  color: "var(--tx-2)",
+  borderRadius: "4px",
+  padding: "0.5rem 1rem",
+  fontSize: "0.875rem",
+  cursor: "pointer",
+};
+
+const btnSmall: React.CSSProperties = {
+  background: "var(--bg-subtle)",
+  border: "1px solid var(--border)",
+  color: "var(--tx-2)",
+  borderRadius: "4px",
+  padding: "0.25rem 0.75rem",
+  fontSize: "0.75rem",
+  cursor: "pointer",
+};
+
+const OK_BG  = "oklch(62% 0.15 145 / 0.12)";
+const ERR_BG = "oklch(62% 0.18 22 / 0.12)";
+const OK_BD  = "oklch(62% 0.15 145 / 0.35)";
+const ERR_BD = "oklch(62% 0.18 22 / 0.35)";
+
+function StatusBadge({ result }: { result: { message: string; type: "success" | "error" } }) {
+  const isOk = result.type === "success";
+  return (
+    <div className="px-3 py-2 rounded text-xs font-medium"
+         style={{
+           background: isOk ? OK_BG  : ERR_BG,
+           color:      isOk ? OK     : ERR,
+           border:     `1px solid ${isOk ? OK_BD : ERR_BD}`,
+         }}>
+      {result.message}
+    </div>
+  );
+}
+
+function SectionHeader({ label, count }: { label: string; count?: number }) {
+  return (
+    <div className="flex items-center gap-2 mb-6 pb-3" style={{ borderBottom: "1px solid var(--border-faint)" }}>
+      <p className="text-xs font-medium uppercase tracking-[0.1em]" style={{ color: "var(--tx-3)" }}>{label}</p>
+      {count !== undefined && (
+        <span className="font-mono text-xs" style={{ color: "var(--tx-3)" }}>{count}</span>
+      )}
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [isCreating, setIsCreating] = useState(false);
@@ -23,7 +100,7 @@ export default function AdminDashboard() {
     title: "",
     description: "",
     thumbnail: "",
-    links: [] as BlogLink[]
+    links: [] as BlogLink[],
   });
   const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
@@ -31,14 +108,12 @@ export default function AdminDashboard() {
   const [newLink, setNewLink] = useState({ text: "", url: "" });
   const previewContentRef = useRef<HTMLDivElement>(null);
 
-  // News generation state
   const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
   const [newsCount, setNewsCount] = useState(3);
   const [newsSources, setNewsSources] = useState<Set<string>>(new Set(["reddit", "hackernews", "papers"]));
   const [isGeneratingNews, setIsGeneratingNews] = useState(false);
   const [newsResult, setNewsResult] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
-  // News edit state
   const [editingNews, setEditingNews] = useState<NewsArticle | null>(null);
   const [editNewsForm, setEditNewsForm] = useState({
     title: "",
@@ -53,7 +128,6 @@ export default function AdminDashboard() {
   });
   const [isSavingNews, setIsSavingNews] = useState(false);
 
-  // Cron state
   const [cronConfig, setCronConfig] = useState<{
     cronSecret: boolean;
     supabase: boolean;
@@ -68,10 +142,7 @@ export default function AdminDashboard() {
   const [cronResult, setCronResult] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [lastCronRun, setLastCronRun] = useState<string | null>(null);
 
-  // Check authentication status on mount
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  useEffect(() => { checkAuth(); }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -83,18 +154,17 @@ export default function AdminDashboard() {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/verify');
+      const response = await fetch("/api/auth/verify");
       const result = await response.json();
       setIsAuthenticated(result.authenticated || false);
     } catch (error) {
-      console.error('Error checking auth:', error);
+      console.error("Error checking auth:", error);
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Initialize copy buttons in preview when content changes
   useEffect(() => {
     if (isPreview && newPost.description && previewContentRef.current) {
       initializeCopyButtons(previewContentRef.current);
@@ -103,76 +173,61 @@ export default function AdminDashboard() {
 
   const fetchBlogs = async () => {
     try {
-      const response = await fetch('/api/blogs');
+      const response = await fetch("/api/blogs");
       const result = await response.json();
-      if (result.success) {
-        setBlogPosts(result.data);
-      }
+      if (result.success) setBlogPosts(result.data);
     } catch (error) {
-      console.error('Error fetching blogs:', error);
+      console.error("Error fetching blogs:", error);
     }
   };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
-    
-    if (!adminKey.trim()) {
-      setLoginError("Please enter an admin key");
-      return;
-    }
-
+    if (!adminKey.trim()) { setLoginError("Please enter an admin key"); return; }
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ adminKey }),
       });
-
       const result = await response.json();
-      
       if (result.success) {
         setIsAuthenticated(true);
-        setAdminKey(""); // Clear the input
+        setAdminKey("");
       } else {
         if (response.status === 429) {
           setLoginError(`Too many attempts. Try again in ${Math.ceil((result.retryAfter || 0) / 60)} minutes.`);
         } else {
-          setLoginError(result.error || 'Invalid admin key');
+          setLoginError(result.error || "Invalid admin key");
         }
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setLoginError('Failed to login. Please try again.');
+      console.error("Login error:", error);
+      setLoginError("Failed to login. Please try again.");
     }
   };
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch("/api/auth/logout", { method: "POST" });
       setIsAuthenticated(false);
       setBlogPosts([]);
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     }
   };
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPost.title.trim() || !newPost.description.trim()) return;
-
     try {
-      const response = await fetch('/api/blogs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies
-        body: JSON.stringify(newPost)
+      const response = await fetch("/api/blogs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(newPost),
       });
-
       const result = await response.json();
       if (result.success) {
         await fetchBlogs();
@@ -181,43 +236,33 @@ export default function AdminDashboard() {
         setIsCreating(false);
         setIsPreview(false);
       } else {
-        alert('Error: ' + result.error);
+        alert("Error: " + result.error);
       }
     } catch (error) {
-      console.error('Error creating blog:', error);
-      alert('Failed to create blog post');
+      console.error("Error creating blog:", error);
+      alert("Failed to create blog post");
     }
   };
 
   const handleEditPost = (post: BlogPost) => {
-    setNewPost({
-      title: post.title,
-      description: post.description,
-      thumbnail: post.thumbnail || "",
-      links: post.links || []
-    });
+    setNewPost({ title: post.title, description: post.description, thumbnail: post.thumbnail || "", links: post.links || [] });
     setThumbnailPreview(post.thumbnail || "");
     setIsEditing(post.id);
     setIsCreating(true);
     setIsPreview(false);
-    // Scroll to top of form
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleUpdatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isEditing || !newPost.title.trim() || !newPost.description.trim()) return;
-
     try {
       const response = await fetch(`/api/blogs/${isEditing}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(newPost)
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(newPost),
       });
-
       const result = await response.json();
       if (result.success) {
         await fetchBlogs();
@@ -226,13 +271,13 @@ export default function AdminDashboard() {
         setIsCreating(false);
         setIsEditing(null);
         setIsPreview(false);
-        alert('Blog post updated successfully!');
+        alert("Blog post updated successfully!");
       } else {
-        alert('Error: ' + result.error);
+        alert("Error: " + result.error);
       }
     } catch (error) {
-      console.error('Error updating blog:', error);
-      alert('Failed to update blog post');
+      console.error("Error updating blog:", error);
+      alert("Failed to update blog post");
     }
   };
 
@@ -247,64 +292,39 @@ export default function AdminDashboard() {
   const handleThumbnailUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      alert('File must be an image');
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
-      return;
-    }
-
+    if (!file.type.startsWith("image/")) { alert("File must be an image"); return; }
+    if (file.size > 5 * 1024 * 1024) { alert("File size must be less than 5MB"); return; }
     setIsUploadingThumbnail(true);
     try {
       const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-
+      formData.append("file", file);
+      const response = await fetch("/api/upload", { method: "POST", credentials: "include", body: formData });
       const result = await response.json();
       if (result.success) {
         setNewPost({ ...newPost, thumbnail: result.url });
         setThumbnailPreview(result.url);
       } else {
-        alert('Failed to upload thumbnail: ' + result.error);
+        alert("Failed to upload thumbnail: " + result.error);
       }
     } catch (error) {
-      console.error('Error uploading thumbnail:', error);
-      alert('Failed to upload thumbnail');
+      console.error("Error uploading thumbnail:", error);
+      alert("Failed to upload thumbnail");
     } finally {
       setIsUploadingThumbnail(false);
-      event.target.value = '';
+      event.target.value = "";
     }
   };
 
   const handleDeletePost = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this blog post?")) return;
-
+    if (!window.confirm("Delete this blog post?")) return;
     try {
-      const response = await fetch(`/api/blogs/${id}`, {
-        method: 'DELETE',
-        credentials: 'include', // Include cookies
-      });
-
+      const response = await fetch(`/api/blogs/${id}`, { method: "DELETE", credentials: "include" });
       const result = await response.json();
-      if (result.success) {
-        await fetchBlogs();
-      } else {
-        alert('Error: ' + result.error);
-      }
+      if (result.success) await fetchBlogs();
+      else alert("Error: " + result.error);
     } catch (error) {
-      console.error('Error deleting blog:', error);
-      alert('Failed to delete blog post');
+      console.error("Error deleting blog:", error);
+      alert("Failed to delete blog post");
     }
   };
 
@@ -314,9 +334,7 @@ export default function AdminDashboard() {
       const result = await response.json();
       if (result.success) {
         setCronConfig(result.config);
-        if (result.config.cronHour !== undefined) {
-          setCronHour(result.config.cronHour);
-        }
+        if (result.config.cronHour !== undefined) setCronHour(result.config.cronHour);
       }
     } catch (error) {
       console.error("Error fetching cron config:", error);
@@ -326,17 +344,11 @@ export default function AdminDashboard() {
   const handleCronTest = async () => {
     setIsCronTesting(true);
     setCronResult(null);
-
     try {
-      const response = await fetch("/api/admin/cron-test", {
-        method: "POST",
-        credentials: "include",
-      });
-
+      const response = await fetch("/api/admin/cron-test", { method: "POST", credentials: "include" });
       const result = await response.json();
       const now = new Date().toLocaleString();
       setLastCronRun(now);
-
       if (result.success && result.result?.success) {
         const created = result.result.articlesCreated || 0;
         setCronResult({
@@ -347,10 +359,7 @@ export default function AdminDashboard() {
         });
         await fetchNewsArticles();
       } else {
-        setCronResult({
-          message: result.result?.error || result.error || "Cron test failed",
-          type: "error",
-        });
+        setCronResult({ message: result.result?.error || result.error || "Cron test failed", type: "error" });
       }
     } catch (error) {
       console.error("Cron test error:", error);
@@ -364,9 +373,7 @@ export default function AdminDashboard() {
     try {
       const response = await fetch("/api/news");
       const result = await response.json();
-      if (result.success) {
-        setNewsArticles(result.data);
-      }
+      if (result.success) setNewsArticles(result.data);
     } catch (error) {
       console.error("Error fetching news:", error);
     }
@@ -375,7 +382,6 @@ export default function AdminDashboard() {
   const handleGenerateNews = async () => {
     setIsGeneratingNews(true);
     setNewsResult(null);
-
     try {
       const response = await fetch("/api/admin/generate-news", {
         method: "POST",
@@ -383,9 +389,7 @@ export default function AdminDashboard() {
         credentials: "include",
         body: JSON.stringify({ count: newsCount, sources: Array.from(newsSources) }),
       });
-
       const result = await response.json();
-
       if (result.success) {
         setNewsResult({
           message: result.articlesCreated > 0
@@ -395,10 +399,7 @@ export default function AdminDashboard() {
         });
         await fetchNewsArticles();
       } else {
-        setNewsResult({
-          message: result.error || "Failed to generate news",
-          type: "error",
-        });
+        setNewsResult({ message: result.error || "Failed to generate news", type: "error" });
       }
     } catch (error) {
       console.error("Error generating news:", error);
@@ -410,19 +411,11 @@ export default function AdminDashboard() {
 
   const handleDeleteNews = async (slug: string) => {
     if (!window.confirm("Delete this news article?")) return;
-
     try {
-      const response = await fetch(`/api/news/${slug}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
+      const response = await fetch(`/api/news/${slug}`, { method: "DELETE", credentials: "include" });
       const result = await response.json();
-      if (result.success) {
-        await fetchNewsArticles();
-      } else {
-        alert("Error: " + result.error);
-      }
+      if (result.success) await fetchNewsArticles();
+      else alert("Error: " + result.error);
     } catch (error) {
       console.error("Error deleting news:", error);
       alert("Failed to delete article");
@@ -449,7 +442,6 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!editingNews) return;
     setIsSavingNews(true);
-
     try {
       const response = await fetch(`/api/news/${editingNews.slug}`, {
         method: "PUT",
@@ -467,14 +459,9 @@ export default function AdminDashboard() {
           created_at: new Date(editNewsForm.created_at).toISOString(),
         }),
       });
-
       const result = await response.json();
-      if (result.success) {
-        setEditingNews(null);
-        await fetchNewsArticles();
-      } else {
-        alert("Error: " + result.error);
-      }
+      if (result.success) { setEditingNews(null); await fetchNewsArticles(); }
+      else alert("Error: " + result.error);
     } catch (error) {
       console.error("Error updating news:", error);
       alert("Failed to update article");
@@ -485,105 +472,73 @@ export default function AdminDashboard() {
 
   const addLink = () => {
     if (newLink.text && newLink.url) {
-      setNewPost({
-        ...newPost,
-        links: [...(newPost.links || []), newLink]
-      });
+      setNewPost({ ...newPost, links: [...(newPost.links || []), newLink] });
       setNewLink({ text: "", url: "" });
     }
   };
 
   const removeLink = (index: number) => {
-    setNewPost({
-      ...newPost,
-      links: newPost.links?.filter((_, i) => i !== index) || []
-    });
+    setNewPost({ ...newPost, links: newPost.links?.filter((_, i) => i !== index) || [] });
   };
 
+  // ── Loading ──────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-white text-[#0a0a0a] overflow-hidden">
+      <main style={{ background: "var(--bg)", color: "var(--tx-1)", minHeight: "100vh" }}>
         <CenterNavbar />
-        <section className="relative flex min-h-screen flex-col items-center justify-center px-6 py-20">
-          <div className="absolute inset-0 bg-dots opacity-20" />
-          <div className="relative z-10 flex items-center gap-3">
-            <div className="loading-dot" />
-            <div className="loading-dot" />
-            <div className="loading-dot" />
-          </div>
-          <p className="relative z-10 mt-6 font-display text-lg font-bold tracking-tight">AUTHENTICATING...</p>
-        </section>
+        <div className="flex items-center justify-center min-h-screen gap-3">
+          <div className="loading-dot" />
+          <div className="loading-dot" />
+          <div className="loading-dot" />
+        </div>
       </main>
     );
   }
 
+  // ── Login ────────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
-      <main className="min-h-screen bg-white text-[#0a0a0a] overflow-hidden">
+      <main style={{ background: "var(--bg)", color: "var(--tx-1)", minHeight: "100vh" }}>
         <CenterNavbar />
-        <section className="relative flex min-h-screen flex-col items-center justify-center px-6 py-20">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 bg-dots opacity-20" />
-
-          {/* Decorative shapes */}
-          <div className="absolute top-20 right-0 w-48 h-48 bg-[#ff3d00] -rotate-12 translate-x-1/3 opacity-80" />
-          <div className="absolute bottom-20 left-0 w-32 h-32 bg-[#0066ff] rotate-6 -translate-x-1/3 opacity-80" />
-
-          <div className="relative z-10 max-w-md w-full">
-            <div className="card-brutal p-8 md:p-12">
-              <div className="mb-8">
-                <span className="tag-brutal-filled text-xs">
-                  {new Date().toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit'
-                  }).replace(/\//g, '.')}
-                </span>
-                <h1 className="mt-6 font-display text-4xl md:text-5xl font-black tracking-tighter leading-none">
-                  ADMIN<br />
-                  <span className="text-[#ff3d00]">ACCESS</span>
-                </h1>
-              </div>
-
-              <form onSubmit={handleAuth} className="space-y-6">
-                <div>
-                  <label htmlFor="adminKey" className="block font-display text-sm font-bold uppercase tracking-wider mb-3">
-                    Secret Key
-                  </label>
-                  <input
-                    type="password"
-                    id="adminKey"
-                    value={adminKey}
-                    onChange={(e) => {
-                      setAdminKey(e.target.value);
-                      setLoginError("");
-                    }}
-                    className="input-brutal"
-                    placeholder="Enter admin key..."
-                    required
-                  />
-                  {loginError && (
-                    <div className="mt-3 p-3 bg-[#ff3d00] text-white border-3 border-[#0a0a0a]">
-                      <p className="text-sm font-bold">{loginError}</p>
-                    </div>
-                  )}
-                </div>
-                <button type="submit" className="btn-brutal w-full justify-center">
-                  ACCESS DASHBOARD
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="square" strokeLinejoin="miter" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </button>
-              </form>
+        <div className="flex items-center justify-center min-h-screen px-6">
+          <div style={{ width: "100%", maxWidth: "340px" }}>
+            <div className="mb-8">
+              <p className="text-xs font-medium uppercase tracking-[0.1em] mb-1.5" style={{ color: "var(--tx-3)" }}>
+                Admin
+              </p>
+              <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
             </div>
+            <form onSubmit={handleAuth} className="space-y-4">
+              <div>
+                <label htmlFor="adminKey" className="block text-xs font-medium mb-1.5" style={{ color: "var(--tx-2)" }}>
+                  Admin key
+                </label>
+                <input
+                  type="password"
+                  id="adminKey"
+                  value={adminKey}
+                  onChange={(e) => { setAdminKey(e.target.value); setLoginError(""); }}
+                  style={{ ...monoInputStyle, padding: "0.625rem 0.75rem" }}
+                  placeholder="Enter admin key"
+                  required
+                />
+                {loginError && (
+                  <p className="mt-2 text-xs" style={{ color: ERR }}>{loginError}</p>
+                )}
+              </div>
+              <button type="submit" style={{ ...btnPrimary, width: "100%", justifyContent: "center", display: "flex" }}>
+                Sign in
+              </button>
+            </form>
           </div>
-        </section>
+        </div>
       </main>
     );
   }
 
+  // ── Dashboard ────────────────────────────────────────────────────────
   return (
-    <main className="min-h-screen bg-white text-[#0a0a0a] overflow-hidden">
+    <main style={{ background: "var(--bg)", color: "var(--tx-1)", minHeight: "100vh" }}>
       <CenterNavbar />
 
       {showImagePicker && (
@@ -598,932 +553,573 @@ export default function AdminDashboard() {
         />
       )}
 
-      <section className="relative min-h-screen px-6 md:px-12 lg:px-24 py-32">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-dots opacity-10" />
+      <div className="mx-auto px-6 pt-24 pb-24" style={{ maxWidth: "720px" }}>
 
-        <div className="relative z-10 max-w-5xl mx-auto">
-          {/* Header */}
-          <div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div>
-              <span className="tag-brutal-filled text-xs">
-                {new Date().toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit'
-                }).replace(/\//g, '.')}
-              </span>
-              <h1 className="mt-4 font-display text-5xl md:text-6xl font-black tracking-tighter leading-none">
-                ADMIN<br />
-                <span className="text-[#ff3d00]">DASHBOARD</span>
-              </h1>
-            </div>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-14">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.1em] mb-1" style={{ color: "var(--tx-3)" }}>Admin</p>
+            <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
+          </div>
+          <button onClick={handleLogout} style={btnSmall}>Sign out</button>
+        </div>
+
+        {/* ── BLOG SECTION ──────────────────────────────────────────── */}
+        <section className="mb-16">
+          <SectionHeader label="Writing" count={blogPosts.length} />
+
+          {!isCreating ? (
             <button
-              onClick={handleLogout}
-              className="btn-brutal-outline self-start md:self-auto"
+              onClick={() => {
+                setIsCreating(true);
+                setIsEditing(null);
+                setNewPost({ title: "", description: "", thumbnail: "", links: [] });
+                setThumbnailPreview("");
+              }}
+              style={{ ...btnPrimary, display: "inline-flex", alignItems: "center", gap: "0.375rem" }}
             >
-              LOGOUT
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="square" strokeLinejoin="miter" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
+              + New post
             </button>
-          </div>
-
-          {/* Blog Management Section */}
-          <div className="space-y-8">
-            <div className="flex items-center gap-4 mb-8">
-              <h2 className="font-display text-2xl font-bold tracking-tight">BLOG MANAGEMENT</h2>
-              <div className="flex-1 h-1 bg-[#0a0a0a]" />
-            </div>
-
-            <div className="pb-8 border-b-4 border-[#0a0a0a]">
-              
-              {!isCreating ? (
-                <button
-                  onClick={() => {
-                    setIsCreating(true);
-                    setIsEditing(null);
-                    setNewPost({ title: "", description: "", thumbnail: "", links: [] });
-                    setThumbnailPreview("");
-                  }}
-                  className="btn-brutal"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="square" strokeLinejoin="miter" d="M12 4v16m8-8H4" />
-                  </svg>
-                  CREATE NEW POST
-                </button>
-              ) : (
-                <div className="space-y-6">
-                  {/* Preview/Edit Toggle */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                    <h3 className="font-display text-xl font-bold tracking-tight">
-                      {isEditing ? (
-                        <span className="flex items-center gap-3">
-                          <span className="w-3 h-3 bg-[#0066ff] rotate-45" />
-                          EDITING POST
-                        </span>
-                      ) : isPreview ? (
-                        <span className="flex items-center gap-3">
-                          <span className="w-3 h-3 bg-[#ff3d00] rotate-45" />
-                          PREVIEW MODE
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-3">
-                          <span className="w-3 h-3 bg-[#0a0a0a] rotate-45" />
-                          NEW POST
-                        </span>
-                      )}
-                    </h3>
-                    <div className="flex gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setIsPreview(!isPreview)}
-                        className="px-4 py-2 bg-[#0a0a0a] text-white font-display text-sm font-bold uppercase tracking-wider border-3 border-[#0a0a0a] shadow-brutal-sm hover:shadow-brutal hover:-translate-x-1 hover:-translate-y-1 transition-all"
-                      >
-                        {isPreview ? 'EDIT' : 'PREVIEW'}
-                      </button>
-                      {isEditing && (
-                        <button
-                          type="button"
-                          onClick={handleCancelEdit}
-                          className="px-4 py-2 bg-white text-[#0a0a0a] font-display text-sm font-bold uppercase tracking-wider border-3 border-[#0a0a0a] shadow-brutal-sm hover:bg-[#0a0a0a] hover:text-white transition-all"
-                        >
-                          CANCEL
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Idea Box */}
-                  {!isPreview && (
-                    <div className="mb-8">
-                      <IdeaBox
-                        onInsertTitle={(title) => {
-                          setNewPost({ ...newPost, title });
-                        }}
-                        onInsertContent={(content) => {
-                          const currentContent = newPost.description || '';
-                          const newContent = currentContent
-                            ? `${currentContent}\n\n${content}`
-                            : content;
-                          setNewPost({ ...newPost, description: newContent });
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  {isPreview ? (
-                    /* Preview Mode */
-                    <div className="card-brutal p-8 md:p-12">
-                      {newPost.title ? (
-                        <>
-                          <div className="mb-8">
-                            <span className="tag-brutal text-xs">
-                              {new Date().toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: '2-digit',
-                                day: '2-digit'
-                              }).replace(/\//g, '.')}
-                            </span>
-                            <h1 className="mt-6 font-display text-4xl md:text-5xl font-black tracking-tighter">
-                              {newPost.title}
-                            </h1>
-                          </div>
-
-                          {newPost.thumbnail && (
-                            <div className="mb-8 stacked-image">
-                              <img
-                                src={newPost.thumbnail}
-                                alt={newPost.title}
-                                className="w-full h-64 object-cover border-3 border-[#0a0a0a]"
-                              />
-                            </div>
-                          )}
-
-                          <div className="space-y-6 text-base leading-relaxed md:text-lg">
-                            {newPost.description ? (
-                              <div
-                                ref={previewContentRef}
-                                className="prose prose-lg max-w-none prose-headings:font-display prose-headings:font-bold prose-p:text-zinc-600 prose-a:text-blue-600 hover:prose-a:text-orange-500 prose-strong:text-zinc-900 prose-pre:bg-black prose-pre:text-green-400 prose-pre:rounded-none prose-pre:text-sm prose-pre:border prose-pre:border-zinc-700 prose-code:bg-zinc-100 prose-code:text-zinc-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none prose-img:rounded-lg [&_iframe]:w-full [&_iframe]:rounded-lg [&_iframe]:aspect-video [&_iframe]:my-4"
-                                dangerouslySetInnerHTML={{ __html: processEmbedContent(newPost.description) }}
-                                suppressHydrationWarning
-                              />
-                            ) : (
-                              <p className="text-[#737373] font-display">No content yet. Start writing to see preview.</p>
-                            )}
-
-                            {/* Related Links Section */}
-                            {newPost.links && newPost.links.length > 0 && (
-                              <div className="mt-12 pt-8 border-t-4 border-[#0a0a0a]">
-                                <h2 className="font-display text-xl font-bold tracking-tight mb-4">
-                                  RELATED LINKS
-                                </h2>
-                                <div className="space-y-3">
-                                  {newPost.links.map((link, index) => (
-                                    <div key={index}>
-                                      <a
-                                        href={link.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 text-[#0066ff] hover:text-[#ff3d00] font-bold underline decoration-2 underline-offset-4 transition-colors"
-                                      >
-                                        {link.text}
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                          <path strokeLinecap="square" strokeLinejoin="miter" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                                        </svg>
-                                      </a>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-center py-16">
-                          <div className="w-16 h-16 mx-auto mb-4 border-4 border-dashed border-[#e5e5e5] flex items-center justify-center">
-                            <span className="text-2xl text-[#e5e5e5]">?</span>
-                          </div>
-                          <p className="text-[#737373] font-display">Add a title and content to see preview.</p>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    /* Edit Mode */
-                    <form onSubmit={isEditing ? handleUpdatePost : handleCreatePost} className="space-y-6">
-                      <div>
-                        <label htmlFor="title" className="block font-display text-sm font-bold uppercase tracking-wider mb-3">
-                          Blog Title
-                        </label>
-                        <input
-                          type="text"
-                          id="title"
-                          value={newPost.title}
-                          onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-                          className="input-brutal"
-                          placeholder="Enter blog title..."
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label htmlFor="thumbnail" className="block font-display text-sm font-bold uppercase tracking-wider mb-3">
-                          Thumbnail Image <span className="text-[#737373] font-normal lowercase">(optional)</span>
-                        </label>
-                        {thumbnailPreview && (
-                          <div className="mb-4">
-                            <div className="stacked-image inline-block">
-                              <img
-                                src={thumbnailPreview}
-                                alt="Thumbnail preview"
-                                className="w-full max-w-md h-48 object-cover border-3 border-[#0a0a0a]"
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setNewPost({ ...newPost, thumbnail: "" });
-                                setThumbnailPreview("");
-                              }}
-                              className="mt-4 block text-sm text-[#ff3d00] hover:text-[#0a0a0a] font-bold uppercase tracking-wider transition-colors"
-                            >
-                              &times; Remove thumbnail
-                            </button>
-                          </div>
-                        )}
-                        <div className="flex flex-col sm:flex-row gap-3">
-                          <button
-                            type="button"
-                            onClick={() => setShowImagePicker(true)}
-                            className="flex-1 px-4 py-3 bg-[#0066ff] text-white font-display text-sm font-bold uppercase tracking-wider border-3 border-[#0a0a0a] shadow-brutal-sm hover:shadow-brutal hover:-translate-x-1 hover:-translate-y-1 transition-all"
-                          >
-                            SEARCH PEXELS
-                          </button>
-                          <label className="flex-1 px-4 py-3 bg-white text-[#0a0a0a] font-display text-sm font-bold uppercase tracking-wider border-3 border-[#0a0a0a] shadow-brutal-sm hover:bg-[#0a0a0a] hover:text-white transition-all cursor-pointer text-center">
-                            UPLOAD IMAGE
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleThumbnailUpload}
-                              disabled={isUploadingThumbnail}
-                              className="hidden"
-                            />
-                          </label>
-                        </div>
-                        {isUploadingThumbnail && (
-                          <div className="mt-3 flex items-center gap-2">
-                            <div className="loading-dot !w-3 !h-3" />
-                            <span className="text-sm font-bold">Uploading...</span>
-                          </div>
-                        )}
-                        <p className="mt-3 text-xs text-[#737373]">
-                          Search from millions of free images on Pexels or upload your own. Recommended: 1200x630px or 16:9 aspect ratio.
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="description" className="block font-display text-sm font-bold uppercase tracking-wider mb-3">
-                          Blog Content
-                        </label>
-                        <RichTextEditor
-                          content={newPost.description}
-                          onChange={(content) => setNewPost({ ...newPost, description: content })}
-                          placeholder="Start writing your blog post... Use the toolbar to format text, add images, links, code blocks, and more!"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block font-display text-sm font-bold uppercase tracking-wider mb-3">
-                          Related Links <span className="text-[#737373] font-normal lowercase">(optional)</span>
-                        </label>
-                        <div className="space-y-3">
-                          {newPost.links?.map((link, index) => (
-                            <div key={index} className="flex items-center gap-3 p-3 bg-[#f5f5f5] border-2 border-[#e5e5e5]">
-                              <span className="flex-1 text-sm font-medium truncate">{link.text} <span className="text-[#737373]">→</span> {link.url}</span>
-                              <button
-                                type="button"
-                                onClick={() => removeLink(index)}
-                                className="text-[#ff3d00] hover:text-[#0a0a0a] text-sm font-bold uppercase tracking-wider transition-colors"
-                              >
-                                &times;
-                              </button>
-                            </div>
-                          ))}
-                          <div className="flex flex-col sm:flex-row gap-3">
-                            <input
-                              type="text"
-                              value={newLink.text}
-                              onChange={(e) => setNewLink({ ...newLink, text: e.target.value })}
-                              placeholder="Link text..."
-                              className="flex-1 px-4 py-3 border-3 border-[#0a0a0a] text-sm focus:outline-none focus:shadow-brutal-sm focus:-translate-x-1 focus:-translate-y-1 transition-all"
-                            />
-                            <input
-                              type="url"
-                              value={newLink.url}
-                              onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
-                              placeholder="https://..."
-                              className="flex-1 px-4 py-3 border-3 border-[#0a0a0a] text-sm focus:outline-none focus:shadow-brutal-sm focus:-translate-x-1 focus:-translate-y-1 transition-all"
-                            />
-                            <button
-                              type="button"
-                              onClick={addLink}
-                              className="px-6 py-3 bg-[#0a0a0a] text-white font-display text-sm font-bold uppercase tracking-wider border-3 border-[#0a0a0a] hover:bg-[#ff3d00] hover:border-[#ff3d00] transition-colors"
-                            >
-                              ADD
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                        <button type="submit" className="btn-brutal">
-                          {isEditing ? 'UPDATE POST' : 'CREATE POST'}
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="square" strokeLinejoin="miter" d="M5 13l4 4L19 7" />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleCancelEdit}
-                          className="btn-brutal-outline"
-                        >
-                          CANCEL
-                        </button>
-                      </div>
-                    </form>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Existing Posts */}
-            <div className="mt-12">
-              <div className="flex items-center gap-4 mb-8">
-                <h3 className="font-display text-xl font-bold tracking-tight">
-                  ALL POSTS <span className="tag-brutal-accent ml-2">{blogPosts.length}</span>
-                </h3>
-                <div className="flex-1 h-1 bg-[#e5e5e5]" />
-              </div>
-
-              {blogPosts.length === 0 ? (
-                <div className="card-brutal p-12 text-center">
-                  <div className="w-20 h-20 mx-auto mb-6 bg-[#f5f5f5] border-3 border-dashed border-[#e5e5e5] flex items-center justify-center">
-                    <span className="text-4xl text-[#e5e5e5]">+</span>
-                  </div>
-                  <p className="font-display text-lg font-bold text-[#737373]">No blog posts yet.</p>
-                  <p className="text-[#737373] mt-2">Create your first post above!</p>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {blogPosts.map((post, index) => (
-                    <article key={post.id} className="card-brutal p-6 md:p-8 hover:shadow-brutal-lg hover:-translate-x-1 hover:-translate-y-1 transition-all">
-                      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-3">
-                            <span className="tag-brutal text-xs">
-                              {new Date(post.created_at).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: '2-digit',
-                                day: '2-digit'
-                              }).replace(/\//g, '.')}
-                            </span>
-                            {post.links && post.links.length > 0 && (
-                              <span className="tag-brutal-filled text-xs">{post.links.length} LINKS</span>
-                            )}
-                          </div>
-                          <h4 className="font-display text-xl md:text-2xl font-bold tracking-tight">
-                            {post.title}
-                          </h4>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEditPost(post)}
-                            className="px-4 py-2 bg-[#0066ff] text-white font-display text-xs font-bold uppercase tracking-wider border-2 border-[#0a0a0a] hover:bg-[#0a0a0a] transition-colors"
-                          >
-                            EDIT
-                          </button>
-                          <button
-                            onClick={() => handleDeletePost(post.id)}
-                            className="px-4 py-2 bg-[#ff3d00] text-white font-display text-xs font-bold uppercase tracking-wider border-2 border-[#0a0a0a] hover:bg-[#0a0a0a] transition-colors"
-                          >
-                            DELETE
-                          </button>
-                        </div>
-                      </div>
-                      <p className="text-[#525252] leading-relaxed line-clamp-2">
-                        {(() => {
-                          const textContent = post.description.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
-                          return textContent.length > 150
-                            ? `${textContent.substring(0, 150)}...`
-                            : textContent;
-                        })()}
-                      </p>
-                      <div className="mt-4 pt-4 border-t-2 border-[#e5e5e5]">
-                        <a
-                          href={`/blog/${post.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-[#0066ff] hover:text-[#ff3d00] font-bold text-sm uppercase tracking-wider transition-colors"
-                        >
-                          VIEW POST
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="square" strokeLinejoin="miter" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                          </svg>
-                        </a>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* News Generation Section */}
-          <div className="mt-16 space-y-8">
-            <div className="flex items-center gap-4 mb-8">
-              <h2 className="font-display text-2xl font-bold tracking-tight">NEWS GENERATION</h2>
-              <div className="flex-1 h-1 bg-[#0a0a0a]" />
-            </div>
-
-            {/* Generate Controls */}
-            <div className="card-brutal p-6 md:p-8">
-              <div className="flex flex-col gap-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6">
-                  <div>
-                    <label className="block font-display text-sm font-bold uppercase tracking-wider mb-3">
-                      Articles to Generate
-                    </label>
-                    <div className="flex items-center gap-3">
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <button
-                          key={n}
-                          type="button"
-                          onClick={() => setNewsCount(n)}
-                          className={`w-12 h-12 font-display text-lg font-bold border-3 border-[#0a0a0a] transition-all ${
-                            newsCount === n
-                              ? "bg-[#0a0a0a] text-white shadow-brutal-accent"
-                              : "bg-white text-[#0a0a0a] hover:bg-[#f5f5f5]"
-                          }`}
-                        >
-                          {n}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleGenerateNews}
-                    disabled={isGeneratingNews || newsSources.size === 0}
-                    className="btn-brutal disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isGeneratingNews ? (
-                    <>
-                      <div className="flex items-center gap-2">
-                        <div className="loading-dot !w-3 !h-3" />
-                        <div className="loading-dot !w-3 !h-3" />
-                        <div className="loading-dot !w-3 !h-3" />
-                      </div>
-                      GENERATING...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="square" strokeLinejoin="miter" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      GENERATE NEWS
-                    </>
-                  )}
+          ) : (
+            <div>
+              {/* Form header */}
+              <div className="flex items-center justify-between mb-5">
+                <p className="text-sm" style={{ color: "var(--tx-2)" }}>
+                  {isEditing ? "Editing post" : isPreview ? "Preview" : "New post"}
+                </p>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setIsPreview(!isPreview)} style={btnSmall}>
+                    {isPreview ? "Edit" : "Preview"}
+                  </button>
+                  <button type="button" onClick={handleCancelEdit}
+                          style={{ ...btnSmall, color: "var(--tx-3)", background: "transparent" }}>
+                    Cancel
                   </button>
                 </div>
-
-                <div>
-                  <label className="block font-display text-sm font-bold uppercase tracking-wider mb-3">
-                    Sources
-                  </label>
-                  <div className="flex items-center gap-3">
-                    {([
-                      { key: "reddit", label: "Reddit" },
-                      { key: "hackernews", label: "Hacker News" },
-                      { key: "papers", label: "Papers" },
-                    ] as const).map(({ key, label }) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => {
-                          setNewsSources((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(key)) next.delete(key);
-                            else next.add(key);
-                            return next;
-                          });
-                        }}
-                        className={`px-4 py-2 font-display text-xs font-bold uppercase tracking-wider border-3 border-[#0a0a0a] transition-all ${
-                          newsSources.has(key)
-                            ? "bg-[#0a0a0a] text-white shadow-brutal-accent"
-                            : "bg-white text-[#0a0a0a] hover:bg-[#f5f5f5]"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
 
-              <p className="mt-4 text-xs text-[#737373]">
-                Fetches trending AI/tech topics from selected sources, generates articles via AI, and publishes to the news section.
-              </p>
-
-              {newsResult && (
-                <div
-                  className={`mt-4 p-4 border-3 border-[#0a0a0a] font-display text-sm font-bold ${
-                    newsResult.type === "success"
-                      ? "bg-[#22c55e] text-white"
-                      : "bg-[#ff3d00] text-white"
-                  }`}
-                >
-                  {newsResult.message}
+              {/* IdeaBox */}
+              {!isPreview && (
+                <div className="mb-5">
+                  <IdeaBox
+                    onInsertTitle={(title) => setNewPost({ ...newPost, title })}
+                    onInsertContent={(content) => {
+                      const cur = newPost.description || "";
+                      setNewPost({ ...newPost, description: cur ? `${cur}\n\n${content}` : content });
+                    }}
+                  />
                 </div>
               )}
-            </div>
 
-            {/* Cron Job Control Panel */}
-            <div className="card-brutal-inverse p-6 md:p-8">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-3 h-3 bg-[#ff3d00] rotate-45" />
-                    <h3 className="font-display text-lg font-bold tracking-tight text-white uppercase">
-                      Cron Job Control
-                    </h3>
+              {isPreview ? (
+                /* Preview */
+                <div className="rounded" style={{ background: "var(--bg-subtle)", border: "1px solid var(--border)", padding: "2rem" }}>
+                  {newPost.title ? (
+                    <>
+                      <h1 className="text-2xl font-semibold tracking-tight mb-6">{newPost.title}</h1>
+                      {newPost.thumbnail && (
+                        <img src={newPost.thumbnail} alt={newPost.title}
+                             className="w-full rounded mb-6"
+                             style={{ aspectRatio: "16/9", objectFit: "cover", border: "1px solid var(--border-faint)" }} />
+                      )}
+                      {newPost.description ? (
+                        <div ref={previewContentRef} className="article-body"
+                             dangerouslySetInnerHTML={{ __html: processEmbedContent(newPost.description) }}
+                             suppressHydrationWarning />
+                      ) : (
+                        <p className="text-sm" style={{ color: "var(--tx-3)" }}>No content yet.</p>
+                      )}
+                      {newPost.links && newPost.links.length > 0 && (
+                        <div className="mt-8 pt-6" style={{ borderTop: "1px solid var(--border-faint)" }}>
+                          <p className="text-xs font-medium uppercase tracking-[0.1em] mb-3" style={{ color: "var(--tx-3)" }}>Links</p>
+                          {newPost.links.map((link, i) => (
+                            <div key={i} className="mb-2">
+                              <a href={link.url} target="_blank" rel="noopener noreferrer"
+                                 className="text-sm transition-colors hover:text-[var(--accent-hi)]"
+                                 style={{ color: "var(--accent)" }}>
+                                {link.text} →
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm" style={{ color: "var(--tx-3)" }}>Add a title to see preview.</p>
+                  )}
+                </div>
+              ) : (
+                /* Edit form */
+                <form onSubmit={isEditing ? handleUpdatePost : handleCreatePost} className="space-y-5">
+                  <div>
+                    <label htmlFor="title" className="block text-xs font-medium mb-1.5" style={{ color: "var(--tx-2)" }}>Title</label>
+                    <input type="text" id="title" value={newPost.title}
+                           onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                           style={{ ...inputStyle, padding: "0.5rem 0.75rem" }}
+                           placeholder="Post title" required />
                   </div>
 
-                  {/* Config Status */}
-                  {cronConfig && (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                      {Object.entries(cronConfig).filter(([key]) => key !== 'schedule' && key !== 'cronHour').map(([key, value]) => (
-                        <div key={key} className="flex items-center gap-2">
-                          <div className={`w-2.5 h-2.5 border-2 border-white ${value ? "bg-[#22c55e]" : "bg-[#ff3d00]"}`} />
-                          <span className="font-mono text-xs text-[#a3a3a3] uppercase">{key}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Current schedule display */}
-                  {cronConfig && (
-                    <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-[#1a1a1a] border border-[#333] w-fit">
-                      <svg className="w-4 h-4 text-[#ff3d00]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="font-mono text-xs text-white">
-                        {cronConfig.schedule}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Schedule picker */}
-                  <div className="flex flex-col gap-3">
-                    <label className="font-mono text-xs text-[#737373] uppercase">Change schedule</label>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <select
-                        value={cronHour}
-                        onChange={(e) => setCronHour(parseInt(e.target.value, 10))}
-                        className="bg-[#1a1a1a] border border-[#333] text-white font-mono text-sm px-3 py-2 outline-none focus:border-[#ff3d00] cursor-pointer min-w-[220px]"
-                      >
-                        {Array.from({ length: 24 }, (_, utcH) => {
-                          const istH = (utcH + 5) % 24;
-                          const period = istH >= 12 ? "PM" : "AM";
-                          const display = istH === 0 ? 12 : istH > 12 ? istH - 12 : istH;
-                          return (
-                            <option key={utcH} value={utcH}>
-                              {display}:30 {period} IST
-                            </option>
-                          );
-                        })}
-                      </select>
-                      <button
-                        onClick={async () => {
-                          setIsSavingSchedule(true);
-                          setCronResult(null);
-                          try {
-                            const res = await fetch("/api/admin/cron-test", {
-                              method: "PUT",
-                              headers: { "Content-Type": "application/json" },
-                              credentials: "include",
-                              body: JSON.stringify({ hour: cronHour }),
-                            });
-                            const data = await res.json();
-                            if (data.success) {
-                              // Compute schedule string locally for immediate update
-                              const istH = (cronHour + 5) % 24;
-                              const p = istH >= 12 ? "PM" : "AM";
-                              const d = istH === 0 ? 12 : istH > 12 ? istH - 12 : istH;
-                              const newSchedule = `Daily at ${d}:30 ${p} IST (${cronHour}:00 UTC)`;
-                              setCronConfig((prev) => prev ? { ...prev, cronHour, schedule: newSchedule } : prev);
-                              setCronResult({ message: "Schedule updated", type: "success" });
-                            } else {
-                              setCronResult({ message: data.error || "Failed to save", type: "error" });
-                            }
-                          } catch {
-                            setCronResult({ message: "Failed to save schedule", type: "error" });
-                          }
-                          setIsSavingSchedule(false);
-                        }}
-                        disabled={isSavingSchedule || cronHour === cronConfig?.cronHour}
-                        className="px-4 py-2 bg-[#ff3d00] text-white font-display text-xs font-bold uppercase tracking-wider border border-[#ff3d00] hover:bg-[#ff5722] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        {isSavingSchedule ? "Saving..." : "Save Schedule"}
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--tx-2)" }}>
+                      Thumbnail <span style={{ color: "var(--tx-3)" }}>(optional)</span>
+                    </label>
+                    {thumbnailPreview && (
+                      <div className="mb-3">
+                        <img src={thumbnailPreview} alt="Preview" className="rounded"
+                             style={{ width: "100%", maxWidth: "320px", height: "160px", objectFit: "cover", border: "1px solid var(--border-faint)" }} />
+                        <button type="button"
+                                onClick={() => { setNewPost({ ...newPost, thumbnail: "" }); setThumbnailPreview(""); }}
+                                className="mt-2 block text-xs transition-colors hover:text-[var(--tx-2)]"
+                                style={{ color: "var(--tx-3)", background: "none", border: "none", cursor: "pointer" }}>
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setShowImagePicker(true)} style={btnSmall}>
+                        Search Pexels
                       </button>
+                      <label style={{ ...btnSmall, display: "inline-block" }}>
+                        Upload
+                        <input type="file" accept="image/*" onChange={handleThumbnailUpload}
+                               disabled={isUploadingThumbnail} className="hidden" />
+                      </label>
                     </div>
-                    <p className="font-mono text-[10px] text-[#525252]">
-                      Cron runs hourly — times are fixed at :30 IST due to UTC+5:30 offset
-                    </p>
-                    {lastCronRun && (
-                      <span className="font-mono text-xs text-[#737373]">
-                        Last run: {lastCronRun}
-                      </span>
+                    {isUploadingThumbnail && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="loading-dot" />
+                        <span className="text-xs" style={{ color: "var(--tx-3)" }}>Uploading...</span>
+                      </div>
                     )}
                   </div>
-                </div>
 
-                <button
-                  onClick={handleCronTest}
-                  disabled={isCronTesting}
-                  className="px-6 py-3 bg-[#ff3d00] text-white font-display text-sm font-bold uppercase tracking-wider border-3 border-white shadow-[4px_4px_0px_#fff] hover:shadow-[6px_6px_0px_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isCronTesting ? (
-                    <span className="flex items-center gap-2">
-                      <div className="loading-dot !w-2.5 !h-2.5 !bg-white" />
-                      <div className="loading-dot !w-2.5 !h-2.5 !bg-white" />
-                      <div className="loading-dot !w-2.5 !h-2.5 !bg-white" />
-                      RUNNING...
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="square" strokeLinejoin="miter" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                        <path strokeLinecap="square" strokeLinejoin="miter" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      TEST CRON NOW
-                    </span>
-                  )}
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--tx-2)" }}>Content</label>
+                    <RichTextEditor
+                      content={newPost.description}
+                      onChange={(content) => setNewPost({ ...newPost, description: content })}
+                      placeholder="Start writing..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--tx-2)" }}>
+                      Related links <span style={{ color: "var(--tx-3)" }}>(optional)</span>
+                    </label>
+                    <div className="space-y-1.5 mb-2">
+                      {newPost.links?.map((link, index) => (
+                        <div key={index} className="flex items-center gap-2 px-3 py-2 rounded"
+                             style={{ background: "var(--bg-hover)", border: "1px solid var(--border-faint)" }}>
+                          <span className="flex-1 text-xs truncate" style={{ color: "var(--tx-2)", fontFamily: "var(--font-mono)" }}>
+                            {link.text} → {link.url}
+                          </span>
+                          <button type="button" onClick={() => removeLink(index)}
+                                  style={{ background: "none", border: "none", color: "var(--tx-3)", cursor: "pointer", fontSize: "1rem", lineHeight: 1 }}>
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <input type="text" value={newLink.text}
+                             onChange={(e) => setNewLink({ ...newLink, text: e.target.value })}
+                             placeholder="Link text" style={{ ...inputStyle, flex: 1 }} />
+                      <input type="url" value={newLink.url}
+                             onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
+                             placeholder="https://..." style={{ ...inputStyle, flex: 1 }} />
+                      <button type="button" onClick={addLink} style={btnSmall}>Add</button>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-1">
+                    <button type="submit" style={btnPrimary}>
+                      {isEditing ? "Update post" : "Publish post"}
+                    </button>
+                    <button type="button" onClick={handleCancelEdit} style={btnSecondary}>Cancel</button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* Post list */}
+          {blogPosts.length === 0 ? (
+            <p className="text-sm mt-8 py-6 text-center" style={{ color: "var(--tx-3)" }}>No posts yet.</p>
+          ) : (
+            <div className="mt-8">
+              {blogPosts.map((post, index) => (
+                <div key={post.id} className="flex items-start gap-4 py-4"
+                     style={{ borderBottom: index < blogPosts.length - 1 ? "1px solid var(--border-faint)" : "none" }}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-2 mb-0.5">
+                      <span className="font-mono text-xs" style={{ color: "var(--tx-3)" }}>
+                        {new Date(post.created_at).toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, ".")}
+                      </span>
+                      {post.links && post.links.length > 0 && (
+                        <span className="font-mono text-xs" style={{ color: "var(--tx-3)" }}>{post.links.length} links</span>
+                      )}
+                    </div>
+                    <p className="text-sm font-medium truncate" style={{ color: "var(--tx-1)" }}>{post.title}</p>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <button onClick={() => handleEditPost(post)}
+                            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", color: "var(--accent)", padding: 0 }}
+                            className="transition-colors hover:text-[var(--accent-hi)]">
+                      Edit
+                    </button>
+                    <a href={`/blog/${post.id}`} target="_blank" rel="noopener noreferrer"
+                       className="text-xs transition-colors hover:text-[var(--tx-2)]"
+                       style={{ color: "var(--tx-3)" }}>
+                      View
+                    </a>
+                    <button onClick={() => handleDeletePost(post.id)}
+                            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", color: ERR, padding: 0 }}
+                            className="transition-opacity hover:opacity-70">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* ── NEWS SECTION ──────────────────────────────────────────── */}
+        <section className="mb-16">
+          <SectionHeader label="News generation" count={newsArticles.length} />
+
+          {/* Generate controls */}
+          <div className="mb-6 p-5 rounded" style={{ background: "var(--bg-subtle)", border: "1px solid var(--border)" }}>
+            <div className="flex flex-col gap-5">
+              <div>
+                <p className="text-xs font-medium mb-2" style={{ color: "var(--tx-2)" }}>Count</p>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button key={n} type="button" onClick={() => setNewsCount(n)}
+                            style={{
+                              width: "32px", height: "32px",
+                              background: newsCount === n ? "var(--accent)" : "var(--bg-hover)",
+                              color: newsCount === n ? "var(--bg)" : "var(--tx-2)",
+                              border: `1px solid ${newsCount === n ? "var(--accent)" : "var(--border)"}`,
+                              borderRadius: "4px",
+                              fontSize: "0.8125rem",
+                              fontWeight: "500",
+                              cursor: "pointer",
+                              transition: "all 0.12s",
+                            }}>
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium mb-2" style={{ color: "var(--tx-2)" }}>Sources</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {([
+                    { key: "reddit", label: "Reddit" },
+                    { key: "hackernews", label: "Hacker News" },
+                    { key: "papers", label: "Papers" },
+                  ] as const).map(({ key, label }) => (
+                    <button key={key} type="button"
+                            onClick={() => setNewsSources((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(key)) next.delete(key); else next.add(key);
+                              return next;
+                            })}
+                            style={{
+                              background: newsSources.has(key) ? "var(--accent)" : "var(--bg-hover)",
+                              color: newsSources.has(key) ? "var(--bg)" : "var(--tx-2)",
+                              border: `1px solid ${newsSources.has(key) ? "var(--accent)" : "var(--border)"}`,
+                              borderRadius: "4px",
+                              padding: "0.25rem 0.75rem",
+                              fontSize: "0.75rem",
+                              cursor: "pointer",
+                              transition: "all 0.12s",
+                            }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button onClick={handleGenerateNews} disabled={isGeneratingNews || newsSources.size === 0}
+                        style={{
+                          ...btnPrimary,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                          opacity: isGeneratingNews || newsSources.size === 0 ? 0.5 : 1,
+                          cursor: isGeneratingNews || newsSources.size === 0 ? "not-allowed" : "pointer",
+                        }}>
+                  {isGeneratingNews ? (
+                    <><div className="loading-dot" /><div className="loading-dot" /><div className="loading-dot" /> Generating</>
+                  ) : "Generate"}
                 </button>
               </div>
 
-              {cronResult && (
-                <div
-                  className={`mt-4 p-4 border-2 font-display text-sm font-bold ${
-                    cronResult.type === "success"
-                      ? "border-[#22c55e] bg-[#22c55e]/20 text-[#22c55e]"
-                      : "border-[#ff3d00] bg-[#ff3d00]/20 text-[#ff3d00]"
-                  }`}
-                >
-                  {cronResult.message}
+              <p className="text-xs" style={{ color: "var(--tx-3)" }}>
+                Fetches trending AI/tech topics, generates articles via AI, publishes to the news section.
+              </p>
+
+              {newsResult && <StatusBadge result={newsResult} />}
+            </div>
+          </div>
+
+          {/* Cron panel */}
+          <div className="mb-6 p-5 rounded" style={{ background: "var(--bg-subtle)", border: "1px solid var(--border)" }}>
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+              <div className="flex-1">
+                <p className="text-xs font-medium uppercase tracking-[0.1em] mb-4" style={{ color: "var(--tx-3)" }}>
+                  Scheduled job
+                </p>
+
+                {cronConfig && (
+                  <div className="flex flex-wrap gap-x-4 gap-y-2 mb-4">
+                    {Object.entries(cronConfig)
+                      .filter(([key]) => key !== "schedule" && key !== "cronHour")
+                      .map(([key, value]) => (
+                        <div key={key} className="flex items-center gap-1.5">
+                          <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: value ? OK : ERR }} />
+                          <span className="font-mono text-xs" style={{ color: "var(--tx-3)" }}>{key}</span>
+                        </div>
+                      ))}
+                  </div>
+                )}
+
+                {cronConfig && (
+                  <div className="flex items-center gap-2 mb-4 px-3 py-1.5 rounded w-fit"
+                       style={{ background: "var(--bg-hover)", border: "1px solid var(--border-faint)" }}>
+                    <span className="font-mono text-xs" style={{ color: "var(--tx-2)" }}>{cronConfig.schedule}</span>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs" style={{ color: "var(--tx-3)" }}>Change schedule</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <select value={cronHour} onChange={(e) => setCronHour(parseInt(e.target.value, 10))}
+                            style={{ ...monoInputStyle, width: "auto", minWidth: "190px", padding: "0.375rem 0.625rem" }}>
+                      {Array.from({ length: 24 }, (_, utcH) => {
+                        const istH = (utcH + 5) % 24;
+                        const period = istH >= 12 ? "PM" : "AM";
+                        const display = istH === 0 ? 12 : istH > 12 ? istH - 12 : istH;
+                        return <option key={utcH} value={utcH}>{display}:30 {period} IST</option>;
+                      })}
+                    </select>
+                    <button
+                      onClick={async () => {
+                        setIsSavingSchedule(true);
+                        setCronResult(null);
+                        try {
+                          const res = await fetch("/api/admin/cron-test", {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({ hour: cronHour }),
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            const istH = (cronHour + 5) % 24;
+                            const p = istH >= 12 ? "PM" : "AM";
+                            const d = istH === 0 ? 12 : istH > 12 ? istH - 12 : istH;
+                            const newSchedule = `Daily at ${d}:30 ${p} IST (${cronHour}:00 UTC)`;
+                            setCronConfig((prev) => prev ? { ...prev, cronHour, schedule: newSchedule } : prev);
+                            setCronResult({ message: "Schedule updated", type: "success" });
+                          } else {
+                            setCronResult({ message: data.error || "Failed to save", type: "error" });
+                          }
+                        } catch {
+                          setCronResult({ message: "Failed to save schedule", type: "error" });
+                        }
+                        setIsSavingSchedule(false);
+                      }}
+                      disabled={isSavingSchedule || cronHour === cronConfig?.cronHour}
+                      style={{
+                        ...btnPrimary,
+                        opacity: isSavingSchedule || cronHour === cronConfig?.cronHour ? 0.4 : 1,
+                        cursor: isSavingSchedule || cronHour === cronConfig?.cronHour ? "not-allowed" : "pointer",
+                        padding: "0.375rem 0.875rem",
+                        fontSize: "0.8125rem",
+                      }}>
+                      {isSavingSchedule ? "Saving..." : "Save"}
+                    </button>
+                  </div>
+                  <p className="font-mono text-xs" style={{ color: "var(--tx-3)" }}>
+                    Times fixed at :30 IST (UTC+5:30 offset)
+                  </p>
+                  {lastCronRun && (
+                    <p className="font-mono text-xs" style={{ color: "var(--tx-3)" }}>Last run: {lastCronRun}</p>
+                  )}
                 </div>
-              )}
+              </div>
+
+              <button onClick={handleCronTest} disabled={isCronTesting}
+                      style={{
+                        ...btnSecondary,
+                        opacity: isCronTesting ? 0.5 : 1,
+                        cursor: isCronTesting ? "not-allowed" : "pointer",
+                        whiteSpace: "nowrap",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                      }}>
+                {isCronTesting ? (
+                  <><div className="loading-dot" /><div className="loading-dot" /><div className="loading-dot" /> Running</>
+                ) : "Run now"}
+              </button>
             </div>
 
-            {/* News Edit Form */}
-            {editingNews && (
-              <div id="news-edit-form" className="card-brutal p-6 md:p-8 border-[#0066ff]">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="font-display text-xl font-bold tracking-tight">
-                    EDIT ARTICLE
-                  </h3>
-                  <button
-                    onClick={() => setEditingNews(null)}
-                    className="px-4 py-2 font-display text-xs font-bold uppercase tracking-wider border-2 border-[#0a0a0a] hover:bg-[#0a0a0a] hover:text-white transition-colors"
-                  >
-                    CANCEL
-                  </button>
-                </div>
-                <form onSubmit={handleUpdateNews} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
-                        Title
-                      </label>
-                      <input
-                        type="text"
-                        value={editNewsForm.title}
-                        onChange={(e) => setEditNewsForm({ ...editNewsForm, title: e.target.value })}
-                        className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
-                        Slug
-                      </label>
-                      <input
-                        type="text"
-                        value={editNewsForm.slug}
-                        onChange={(e) => setEditNewsForm({ ...editNewsForm, slug: e.target.value })}
-                        className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
-                      Excerpt
-                    </label>
-                    <input
-                      type="text"
-                      value={editNewsForm.excerpt}
-                      onChange={(e) => setEditNewsForm({ ...editNewsForm, excerpt: e.target.value })}
-                      className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent"
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
-                        Published Date
-                      </label>
-                      <input
-                        type="datetime-local"
-                        value={editNewsForm.created_at}
-                        onChange={(e) => setEditNewsForm({ ...editNewsForm, created_at: e.target.value })}
-                        className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
-                        Source
-                      </label>
-                      <input
-                        type="text"
-                        value={editNewsForm.source_subreddit}
-                        onChange={(e) => setEditNewsForm({ ...editNewsForm, source_subreddit: e.target.value })}
-                        className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
-                      Thumbnail URL
-                    </label>
-                    <input
-                      type="text"
-                      value={editNewsForm.thumbnail}
-                      onChange={(e) => setEditNewsForm({ ...editNewsForm, thumbnail: e.target.value })}
-                      className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent"
-                      placeholder="https://..."
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
-                      Content (HTML)
-                    </label>
-                    <textarea
-                      value={editNewsForm.description}
-                      onChange={(e) => setEditNewsForm({ ...editNewsForm, description: e.target.value })}
-                      rows={12}
-                      className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent resize-y"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
-                      Source URLs (one per line)
-                    </label>
-                    <textarea
-                      value={editNewsForm.source_urls}
-                      onChange={(e) => setEditNewsForm({ ...editNewsForm, source_urls: e.target.value })}
-                      rows={3}
-                      className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent resize-y"
-                      placeholder="https://reddit.com/..."
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-display text-sm font-bold uppercase tracking-wider mb-2">
-                      Tags (comma-separated)
-                    </label>
-                    <input
-                      type="text"
-                      value={editNewsForm.tags}
-                      onChange={(e) => setEditNewsForm({ ...editNewsForm, tags: e.target.value })}
-                      className="w-full p-3 border-3 border-[#0a0a0a] font-mono text-sm focus:outline-none focus:shadow-brutal-accent"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isSavingNews}
-                    className="px-6 py-3 bg-[#0066ff] text-white font-display text-sm font-bold uppercase tracking-wider border-3 border-[#0a0a0a] shadow-brutal hover:shadow-brutal-lg hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSavingNews ? "SAVING..." : "SAVE CHANGES"}
-                  </button>
-                </form>
+            {cronResult && (
+              <div className="mt-4">
+                <StatusBadge result={cronResult} />
               </div>
             )}
+          </div>
 
-            {/* Existing News Articles */}
-            <div>
-              <div className="flex items-center gap-4 mb-8">
-                <h3 className="font-display text-xl font-bold tracking-tight">
-                  ALL NEWS <span className="tag-brutal-accent ml-2">{newsArticles.length}</span>
-                </h3>
-                <div className="flex-1 h-1 bg-[#e5e5e5]" />
+          {/* News edit form */}
+          {editingNews && (
+            <div id="news-edit-form" className="mb-6 p-5 rounded"
+                 style={{ background: "var(--bg-subtle)", border: "1px solid var(--border)" }}>
+              <div className="flex items-center justify-between mb-5">
+                <p className="text-sm font-medium" style={{ color: "var(--tx-1)" }}>Edit article</p>
+                <button onClick={() => setEditingNews(null)}
+                        style={{ ...btnSmall, color: "var(--tx-3)", background: "transparent" }}>
+                  Cancel
+                </button>
               </div>
-
-              {newsArticles.length === 0 ? (
-                <div className="card-brutal p-12 text-center">
-                  <div className="w-20 h-20 mx-auto mb-6 bg-[#f5f5f5] border-3 border-dashed border-[#e5e5e5] flex items-center justify-center">
-                    <span className="text-4xl text-[#e5e5e5]">+</span>
+              <form onSubmit={handleUpdateNews} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--tx-2)" }}>Title</label>
+                    <input type="text" value={editNewsForm.title}
+                           onChange={(e) => setEditNewsForm({ ...editNewsForm, title: e.target.value })}
+                           required style={inputStyle} />
                   </div>
-                  <p className="font-display text-lg font-bold text-[#737373]">No news articles yet.</p>
-                  <p className="text-[#737373] mt-2">Generate your first batch above!</p>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--tx-2)" }}>Slug</label>
+                    <input type="text" value={editNewsForm.slug}
+                           onChange={(e) => setEditNewsForm({ ...editNewsForm, slug: e.target.value })}
+                           required style={monoInputStyle} />
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  {newsArticles.map((article) => (
-                    <article
-                      key={article.id}
-                      className="card-brutal p-6 md:p-8 hover:shadow-brutal-lg hover:-translate-x-1 hover:-translate-y-1 transition-all"
-                    >
-                      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-3">
-                            <span className="tag-brutal text-xs">
-                              {new Date(article.created_at).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "2-digit",
-                                day: "2-digit",
-                              }).replace(/\//g, ".")}
-                            </span>
-                            <span className="tag-brutal-accent text-xs">
-                              {article.source_subreddit === 'arXiv' ? 'arXiv' : article.source_subreddit === 'HackerNews' ? 'Hacker News' : `r/${article.source_subreddit}`}
-                            </span>
-                          </div>
-                          <h4 className="font-display text-xl md:text-2xl font-bold tracking-tight">
-                            {article.title}
-                          </h4>
-                          <p className="mt-2 text-sm text-[#737373] line-clamp-1">
-                            {article.excerpt}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEditNews(article)}
-                            className="px-4 py-2 bg-[#0066ff] text-white font-display text-xs font-bold uppercase tracking-wider border-2 border-[#0a0a0a] hover:bg-[#0a0a0a] transition-colors"
-                          >
-                            EDIT
-                          </button>
-                          <button
-                            onClick={() => handleDeleteNews(article.slug)}
-                            className="px-4 py-2 bg-[#ff3d00] text-white font-display text-xs font-bold uppercase tracking-wider border-2 border-[#0a0a0a] hover:bg-[#0a0a0a] transition-colors"
-                          >
-                            DELETE
-                          </button>
-                        </div>
-                      </div>
-                      {article.tags && article.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {article.tags.map((tag) => (
-                            <span key={tag} className="tag-brutal text-xs">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      <div className="pt-4 border-t-2 border-[#e5e5e5]">
-                        <a
-                          href={`/news/${article.slug}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-[#0066ff] hover:text-[#ff3d00] font-bold text-sm uppercase tracking-wider transition-colors"
-                        >
-                          VIEW ARTICLE
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="square" strokeLinejoin="miter" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                          </svg>
-                        </a>
-                      </div>
-                    </article>
-                  ))}
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--tx-2)" }}>Excerpt</label>
+                  <input type="text" value={editNewsForm.excerpt}
+                         onChange={(e) => setEditNewsForm({ ...editNewsForm, excerpt: e.target.value })}
+                         required style={inputStyle} />
                 </div>
-              )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--tx-2)" }}>Published date</label>
+                    <input type="datetime-local" value={editNewsForm.created_at}
+                           onChange={(e) => setEditNewsForm({ ...editNewsForm, created_at: e.target.value })}
+                           required style={monoInputStyle} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--tx-2)" }}>Source</label>
+                    <input type="text" value={editNewsForm.source_subreddit}
+                           onChange={(e) => setEditNewsForm({ ...editNewsForm, source_subreddit: e.target.value })}
+                           required style={inputStyle} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--tx-2)" }}>Thumbnail URL</label>
+                  <input type="text" value={editNewsForm.thumbnail}
+                         onChange={(e) => setEditNewsForm({ ...editNewsForm, thumbnail: e.target.value })}
+                         placeholder="https://..." style={inputStyle} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--tx-2)" }}>Content (HTML)</label>
+                  <textarea value={editNewsForm.description}
+                            onChange={(e) => setEditNewsForm({ ...editNewsForm, description: e.target.value })}
+                            rows={10} required
+                            style={{ ...monoInputStyle, resize: "vertical" }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--tx-2)" }}>Source URLs (one per line)</label>
+                  <textarea value={editNewsForm.source_urls}
+                            onChange={(e) => setEditNewsForm({ ...editNewsForm, source_urls: e.target.value })}
+                            rows={3} placeholder="https://reddit.com/..."
+                            style={{ ...monoInputStyle, resize: "vertical" }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--tx-2)" }}>Tags (comma-separated)</label>
+                  <input type="text" value={editNewsForm.tags}
+                         onChange={(e) => setEditNewsForm({ ...editNewsForm, tags: e.target.value })}
+                         style={inputStyle} />
+                </div>
+                <button type="submit" disabled={isSavingNews}
+                        style={{ ...btnPrimary, opacity: isSavingNews ? 0.5 : 1, cursor: isSavingNews ? "not-allowed" : "pointer" }}>
+                  {isSavingNews ? "Saving..." : "Save changes"}
+                </button>
+              </form>
             </div>
-          </div>
+          )}
 
-          {/* Footer Links */}
-          <div className="mt-16 pt-8 border-t-4 border-[#0a0a0a] grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Link
-              href="/blog"
-              className="group card-brutal p-6 flex items-center justify-between hover:!shadow-brutal-accent"
-            >
-              <div>
-                <span className="block font-mono text-xs text-[#737373] uppercase tracking-wider mb-1">/blog</span>
-                <span className="font-display text-lg font-bold tracking-tight group-hover:text-[#ff3d00] transition-colors">
-                  VIEW PUBLIC BLOG
-                </span>
-              </div>
-              <svg className="w-6 h-6 text-[#a3a3a3] group-hover:text-[#ff3d00] group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="square" strokeLinejoin="miter" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </Link>
-            <Link
-              href="/news"
-              className="group card-brutal p-6 flex items-center justify-between hover:!shadow-brutal-blue"
-            >
-              <div>
-                <span className="block font-mono text-xs text-[#737373] uppercase tracking-wider mb-1">/news</span>
-                <span className="font-display text-lg font-bold tracking-tight group-hover:text-[#0066ff] transition-colors">
-                  VIEW PUBLIC NEWS
-                </span>
-              </div>
-              <svg className="w-6 h-6 text-[#a3a3a3] group-hover:text-[#0066ff] group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="square" strokeLinejoin="miter" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </Link>
-          </div>
+          {/* News list */}
+          {newsArticles.length === 0 ? (
+            <p className="text-sm py-6 text-center" style={{ color: "var(--tx-3)" }}>No articles yet.</p>
+          ) : (
+            <div>
+              {newsArticles.map((article, index) => (
+                <div key={article.id} className="flex items-start gap-4 py-4"
+                     style={{ borderBottom: index < newsArticles.length - 1 ? "1px solid var(--border-faint)" : "none" }}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-mono text-xs" style={{ color: "var(--tx-3)" }}>
+                        {new Date(article.created_at).toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, ".")}
+                      </span>
+                      <span className="font-mono text-xs" style={{ color: "var(--tx-3)" }}>
+                        {article.source_subreddit === "arXiv" ? "arXiv" : article.source_subreddit === "HackerNews" ? "HN" : `r/${article.source_subreddit}`}
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium truncate" style={{ color: "var(--tx-1)" }}>{article.title}</p>
+                    {article.tags && article.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {article.tags.slice(0, 3).map((tag) => (
+                          <span key={tag} className="font-mono text-xs px-1.5 py-0.5 rounded"
+                                style={{ background: "var(--bg-hover)", color: "var(--tx-3)", border: "1px solid var(--border-faint)" }}>
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <button onClick={() => handleEditNews(article)}
+                            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", color: "var(--accent)", padding: 0 }}
+                            className="transition-colors hover:text-[var(--accent-hi)]">
+                      Edit
+                    </button>
+                    <a href={`/news/${article.slug}`} target="_blank" rel="noopener noreferrer"
+                       className="text-xs transition-colors hover:text-[var(--tx-2)]"
+                       style={{ color: "var(--tx-3)" }}>
+                      View
+                    </a>
+                    <button onClick={() => handleDeleteNews(article.slug)}
+                            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", color: ERR, padding: 0 }}
+                            className="transition-opacity hover:opacity-70">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Footer nav */}
+        <div className="flex gap-6 pt-8" style={{ borderTop: "1px solid var(--border-faint)" }}>
+          <Link href="/blog" className="text-sm transition-colors hover:text-[var(--accent)]" style={{ color: "var(--tx-3)" }}>
+            /blog →
+          </Link>
+          <Link href="/news" className="text-sm transition-colors hover:text-[var(--accent)]" style={{ color: "var(--tx-3)" }}>
+            /news →
+          </Link>
         </div>
-      </section>
+
+      </div>
     </main>
   );
 }

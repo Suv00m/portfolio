@@ -239,257 +239,134 @@ export default function RichTextEditor({
     return null;
   }
 
+  const tbBtn = (active: boolean, disabled = false): React.CSSProperties => ({
+    padding: "0.25rem 0.5rem",
+    borderRadius: "3px",
+    fontSize: "0.8125rem",
+    fontWeight: "500",
+    border: "none",
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.35 : 1,
+    background: active ? "var(--accent)" : "transparent",
+    color: active ? "var(--bg)" : "var(--tx-2)",
+    transition: "background 0.1s, color 0.1s",
+    fontFamily: "var(--font-mono)",
+  });
+
+  const sep = (
+    <div style={{ width: "1px", alignSelf: "stretch", background: "var(--border)", margin: "0 2px" }} />
+  );
+
   return (
-    <div className="border border-gray-300 rounded-lg overflow-hidden">
+    <div style={{ border: "1px solid var(--border)", borderRadius: "6px", overflow: "hidden" }}>
       {/* Toolbar */}
-      <div className="border-b border-gray-300 bg-gray-50 p-2 flex flex-wrap gap-2">
-        {/* Text Formatting */}
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          disabled={!editor.can().chain().focus().toggleBold().run()}
-          className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-            editor.isActive('bold')
-              ? 'bg-purple-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
-          title="Bold"
-        >
+      <div className="flex flex-wrap items-center gap-0.5 p-1.5"
+           style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-subtle)" }}>
+        <button type="button" title="Bold"
+                onClick={() => editor.chain().focus().toggleBold().run()}
+                disabled={!editor.can().chain().focus().toggleBold().run()}
+                style={tbBtn(editor.isActive("bold"), !editor.can().chain().focus().toggleBold().run())}>
           <strong>B</strong>
         </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          disabled={!editor.can().chain().focus().toggleItalic().run()}
-          className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-            editor.isActive('italic')
-              ? 'bg-purple-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
-          title="Italic"
-        >
+        <button type="button" title="Italic"
+                onClick={() => editor.chain().focus().toggleItalic().run()}
+                disabled={!editor.can().chain().focus().toggleItalic().run()}
+                style={tbBtn(editor.isActive("italic"), !editor.can().chain().focus().toggleItalic().run())}>
           <em>I</em>
         </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleHighlight().run()}
-          className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-            editor.isActive('highlight')
-              ? 'bg-purple-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
-          title="Highlight"
-        >
-          <span className="bg-yellow-200 px-1">H</span>
+        <button type="button" title="Highlight"
+                onClick={() => editor.chain().focus().toggleHighlight().run()}
+                style={tbBtn(editor.isActive("highlight"))}>
+          H
         </button>
 
-        <div className="w-px h-6 bg-gray-300 mx-1" />
+        {sep}
 
-        {/* Headings */}
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-            editor.isActive('heading', { level: 1 })
-              ? 'bg-purple-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
-          title="Heading 1"
-        >
-          H1
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-            editor.isActive('heading', { level: 2 })
-              ? 'bg-purple-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
-          title="Heading 2"
-        >
-          H2
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-            editor.isActive('heading', { level: 3 })
-              ? 'bg-purple-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
-          title="Heading 3"
-        >
-          H3
-        </button>
+        <button type="button" title="Heading 1"
+                onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                style={tbBtn(editor.isActive("heading", { level: 1 }))}>H1</button>
+        <button type="button" title="Heading 2"
+                onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                style={tbBtn(editor.isActive("heading", { level: 2 }))}>H2</button>
+        <button type="button" title="Heading 3"
+                onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                style={tbBtn(editor.isActive("heading", { level: 3 }))}>H3</button>
 
-        <div className="w-px h-6 bg-gray-300 mx-1" />
+        {sep}
 
-        {/* Lists */}
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-            editor.isActive('bulletList')
-              ? 'bg-purple-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
-          title="Bullet List"
-        >
-          •
+        <button type="button" title="Bullet list"
+                onClick={() => editor.chain().focus().toggleBulletList().run()}
+                style={tbBtn(editor.isActive("bulletList"))}>•</button>
+        <button type="button" title="Numbered list"
+                onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                style={tbBtn(editor.isActive("orderedList"))}>1.</button>
+        <button type="button" title="Quote"
+                onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                style={tbBtn(editor.isActive("blockquote"))}>❝</button>
+
+        {sep}
+
+        <button type="button" title="Inline code"
+                onClick={() => editor.chain().focus().toggleCode().run()}
+                disabled={!editor.can().chain().focus().toggleCode().run()}
+                style={tbBtn(editor.isActive("code"), !editor.can().chain().focus().toggleCode().run())}>
+          {"</>"}
         </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-            editor.isActive('orderedList')
-              ? 'bg-purple-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
-          title="Numbered List"
-        >
-          1.
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-            editor.isActive('blockquote')
-              ? 'bg-purple-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
-          title="Quote"
-        >
-          &quot;
+        <button type="button" title="Code block"
+                onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+                style={tbBtn(editor.isActive("codeBlock"))}>{"{ }"}</button>
+
+        {sep}
+
+        <button type="button"
+                title={isAIEnabled ? "AI autocomplete on (Tab=accept, Esc=dismiss)" : "AI autocomplete off"}
+                onClick={() => setIsAIEnabled(!isAIEnabled)}
+                style={tbBtn(isAIEnabled)}>
+          {isAILoading ? "…" : "✦"}
         </button>
 
-        <div className="w-px h-6 bg-gray-300 mx-1" />
+        {sep}
 
-        {/* Code */}
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleCode().run()}
-          disabled={!editor.can().chain().focus().toggleCode().run()}
-          className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-            editor.isActive('code')
-              ? 'bg-purple-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
-          title="Inline Code"
-        >
-          {'</>'}
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-            editor.isActive('codeBlock')
-              ? 'bg-purple-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
-          title="Code Block"
-        >
-          {'{ }'}
+        <button type="button" title="Add link"
+                onClick={setLink}
+                style={tbBtn(editor.isActive("link"))}>🔗</button>
+        <button type="button" title="Upload image"
+                onClick={addImage} disabled={isUploading}
+                style={tbBtn(false, isUploading)}>
+          {isUploading ? "…" : "🖼"}
         </button>
 
-        <div className="w-px h-6 bg-gray-300 mx-1" />
+        {sep}
 
-        {/* AI Autocomplete Toggle */}
-        <button
-          type="button"
-          onClick={() => setIsAIEnabled(!isAIEnabled)}
-          className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-            isAIEnabled
-              ? 'bg-purple-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
-          title={isAIEnabled ? 'AI Autocomplete: On (Tab to accept, Esc to dismiss)' : 'AI Autocomplete: Off'}
-        >
-          {isAILoading ? '⏳' : '✨'}
-        </button>
-
-        <div className="w-px h-6 bg-gray-300 mx-1" />
-
-        {/* Link & Image */}
-        <button
-          type="button"
-          onClick={setLink}
-          className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-            editor.isActive('link')
-              ? 'bg-purple-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
-          title="Add Link"
-        >
-          🔗
-        </button>
-        <button
-          type="button"
-          onClick={addImage}
-          disabled={isUploading}
-          className="px-3 py-1.5 rounded text-sm font-medium transition-colors bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-          title="Upload Image"
-        >
-          {isUploading ? '⏳' : '🖼️'}
-        </button>
-
-        <div className="w-px h-6 bg-gray-300 mx-1" />
-
-        {/* Undo/Redo */}
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().undo().run()}
-          disabled={!editor.can().chain().focus().undo().run()}
-          className="px-3 py-1.5 rounded text-sm font-medium transition-colors bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-          title="Undo"
-        >
-          ↶
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().redo().run()}
-          disabled={!editor.can().chain().focus().redo().run()}
-          className="px-3 py-1.5 rounded text-sm font-medium transition-colors bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-          title="Redo"
-        >
-          ↷
-        </button>
+        <button type="button" title="Undo"
+                onClick={() => editor.chain().focus().undo().run()}
+                disabled={!editor.can().chain().focus().undo().run()}
+                style={tbBtn(false, !editor.can().chain().focus().undo().run())}>↶</button>
+        <button type="button" title="Redo"
+                onClick={() => editor.chain().focus().redo().run()}
+                disabled={!editor.can().chain().focus().redo().run()}
+                style={tbBtn(false, !editor.can().chain().focus().redo().run())}>↷</button>
       </div>
 
-      {/* Hidden file input for image uploads */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={onFileInputChange}
-        className="hidden"
-      />
+      <input ref={fileInputRef} type="file" accept="image/*" onChange={onFileInputChange} className="hidden" />
 
-      {/* Editor Content */}
-      <div className="relative">
-        <EditorContent editor={editor} className="min-h-[300px] bg-white" />
-        {/* AI Suggestion Overlay */}
+      {/* Editor area */}
+      <div className="relative" style={{ background: "var(--bg-hover)" }}>
+        <EditorContent editor={editor} style={{ minHeight: "300px", color: "var(--tx-1)" }} />
         {aiSuggestion && isAIEnabled && (
-          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2"
+               style={{ background: "var(--bg-subtle)", borderTop: "1px solid var(--border)" }}>
             <div className="flex-1">
-              <span className="text-xs text-gray-500 mr-2">AI Suggestion:</span>
-              <span className="text-sm text-gray-600 italic">{aiSuggestion}</span>
+              <span className="text-xs mr-2" style={{ color: "var(--tx-3)" }}>Suggestion:</span>
+              <span className="text-xs italic" style={{ color: "var(--tx-2)" }}>{aiSuggestion}</span>
             </div>
             <div className="flex gap-2 ml-4">
-              <button
-                type="button"
-                onClick={acceptSuggestion}
-                className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700"
-                title="Accept (Tab)"
-              >
+              <button type="button" onClick={acceptSuggestion} title="Accept (Tab)"
+                      style={{ padding: "0.2rem 0.625rem", fontSize: "0.75rem", background: "var(--accent)", color: "var(--bg)", border: "none", borderRadius: "3px", cursor: "pointer" }}>
                 Accept
               </button>
-              <button
-                type="button"
-                onClick={dismissSuggestion}
-                className="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-                title="Dismiss (Esc)"
-              >
+              <button type="button" onClick={dismissSuggestion} title="Dismiss (Esc)"
+                      style={{ padding: "0.2rem 0.625rem", fontSize: "0.75rem", background: "var(--bg-hover)", color: "var(--tx-2)", border: "1px solid var(--border)", borderRadius: "3px", cursor: "pointer" }}>
                 Dismiss
               </button>
             </div>
