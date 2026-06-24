@@ -100,11 +100,11 @@ export default function Socials() {
             Email
           </p>
           <a
-            href="mailto:shuvammandal131@gmail.com"
+            href="mailto:shuvammandal121@gmail.com"
             className="text-sm transition-colors hover:text-[var(--accent)]"
             style={{ color: "var(--tx-2)" }}
           >
-            shuvammandal131@gmail.com
+            shuvammandal121@gmail.com
           </a>
         </section>
 
