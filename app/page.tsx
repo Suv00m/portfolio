@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { BlogPost } from "@/lib/types";
@@ -33,11 +33,101 @@ const projects = [
 ];
 
 const socials = [
-  { label: "GitHub",   url: "https://github.com/Suv00m" },
-  { label: "LinkedIn", url: "https://www.linkedin.com/in/shuvam1/" },
-  { label: "Twitter",  url: "https://x.com/shuvx_" },
-  { label: "Kaggle",   url: "https://kaggle.com/shuvammandal121" },
+  { label: "GitHub",   url: "https://github.com/Suv00m",                    copy: "https://github.com/Suv00m" },
+  { label: "LinkedIn", url: "https://www.linkedin.com/in/shuvam1/",         copy: "https://www.linkedin.com/in/shuvam1/" },
+  { label: "Twitter",  url: "https://x.com/shuvx_",                        copy: "https://x.com/shuvx_" },
+  { label: "Kaggle",      url: "https://kaggle.com/shuvammandal121",          copy: "https://kaggle.com/shuvammandal121" },
+  { label: "HuggingFace", url: "https://huggingface.co/shuvom",             copy: "https://huggingface.co/shuvom" },
+  { label: "Email",       url: "https://mail.google.com/mail/?view=cm&to=shuvammandal121@gmail.com", copy: "shuvammandal121@gmail.com" },
 ];
+
+function SocialLink({ label, url, copy }: { label: string; url: string; copy: string }) {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const handleOpen = () => {
+    window.open(url, "_blank", "noopener,noreferrer");
+    setOpen(false);
+  };
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(copy);
+    setCopied(true);
+    setTimeout(() => { setCopied(false); setOpen(false); }, 1200);
+  };
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className="text-sm transition-colors duration-150 hover:text-[var(--accent)]"
+        style={{ color: open ? "var(--accent)" : "var(--tx-2)", background: "none", border: "none", cursor: "pointer", padding: "3px 0" }}
+      >
+        {label}
+      </button>
+
+      {/* Always rendered — opacity/transform transition handles enter + exit */}
+      <div
+        role="menu"
+        aria-label={`${label} links`}
+        style={{
+          position: "absolute",
+          bottom: "calc(100% + 8px)",
+          left: "50%",
+          transform: open
+            ? "translateX(-50%) translateY(0) scale(1)"
+            : "translateX(-50%) translateY(4px) scale(0.97)",
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? "auto" : "none",
+          background: "var(--bg-subtle)",
+          border: "1px solid var(--border)",
+          borderRadius: "6px",
+          padding: "4px",
+          zIndex: 50,
+          minWidth: "96px",
+          boxShadow: "0 8px 24px oklch(0% 0 0 / 0.4)",
+          transition: "opacity 0.14s ease-out, transform 0.14s ease-out",
+        }}
+      >
+        <button
+          onClick={handleOpen}
+          role="menuitem"
+          tabIndex={open ? 0 : -1}
+          className="block w-full text-left text-xs rounded-sm transition-colors duration-150 hover:text-[var(--tx-1)] hover:bg-[var(--bg-hover)]"
+          style={{ padding: "5px 10px", color: "var(--tx-2)", background: "none", border: "none", cursor: "pointer" }}
+        >
+          Open ↗
+        </button>
+        <button
+          onClick={handleCopy}
+          role="menuitem"
+          tabIndex={open ? 0 : -1}
+          className="block w-full text-left text-xs rounded-sm transition-colors duration-150 hover:text-[var(--tx-1)] hover:bg-[var(--bg-hover)]"
+          style={{ padding: "5px 10px", color: copied ? "var(--accent)" : "var(--tx-2)", background: "none", border: "none", cursor: "pointer" }}
+        >
+          {copied ? "Copied!" : "Copy"}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -183,24 +273,8 @@ export default function Home() {
           </p>
           <div className="flex flex-wrap gap-x-6 gap-y-2">
             {socials.map((s) => (
-              <a
-                key={s.label}
-                href={s.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm transition-colors duration-150 hover:text-[var(--accent)]"
-                style={{ color: "var(--tx-2)" }}
-              >
-                {s.label}
-              </a>
+              <SocialLink key={s.label} label={s.label} url={s.url} copy={s.copy} />
             ))}
-            <a
-              href="mailto:shuvammandal131@gmail.com"
-              className="text-sm transition-colors duration-150 hover:text-[var(--accent)]"
-              style={{ color: "var(--tx-2)" }}
-            >
-              Email
-            </a>
           </div>
         </section>
       </div>
