@@ -10,6 +10,16 @@ import { BlogPost, BlogLink, NewsArticle } from "@/lib/types";
 import { processEmbedContent } from "@/lib/embed-utils";
 import { initializeCopyButtons } from "@/lib/code-copy-utils";
 
+const DRAFT_KEY = 'admin_post_draft';
+
+function saveDraft(post: { title: string; description: string; thumbnail: string; links: BlogLink[] }, editingId: string | null) {
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ post, editingId })); } catch {}
+}
+function loadDraft(): { post: { title: string; description: string; thumbnail: string; links: BlogLink[] }; editingId: string | null } | null {
+  try { const r = localStorage.getItem(DRAFT_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
+}
+function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch {} }
+
 const ERR  = "oklch(62% 0.18 22)";
 const OK   = "oklch(62% 0.15 145)";
 
@@ -87,6 +97,25 @@ function SectionHeader({ label, count }: { label: string; count?: number }) {
   );
 }
 
+function DraftModal({ onSave, onDiscard, onKeep }: { onSave: () => void; onDiscard: () => void; onKeep: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+         style={{ background: 'oklch(0% 0 0 / 0.55)' }} onClick={onKeep}>
+      <div className="w-full max-w-xs rounded-lg p-5"
+           style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', boxShadow: '0 16px 48px oklch(0% 0 0 / 0.5)' }}
+           onClick={e => e.stopPropagation()}>
+        <p className="text-sm font-medium mb-1" style={{ color: 'var(--tx-1)' }}>Unsaved changes</p>
+        <p className="text-xs mb-5" style={{ color: 'var(--tx-3)' }}>Save as draft to resume later, or discard.</p>
+        <div className="flex flex-col gap-2">
+          <button onClick={onSave} style={{ ...btnPrimary, width: '100%' }}>Save draft</button>
+          <button onClick={onDiscard} style={{ ...btnSecondary, width: '100%', color: ERR, borderColor: 'oklch(62% 0.18 22 / 0.4)' }}>Discard</button>
+          <button onClick={onKeep} style={{ ...btnSecondary, width: '100%' }}>Keep editing</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [isCreating, setIsCreating] = useState(false);
@@ -106,7 +135,12 @@ export default function AdminDashboard() {
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [newLink, setNewLink] = useState({ text: "", url: "" });
+  const [hasDraft, setHasDraft] = useState(false);
+  const [showDraftModal, setShowDraftModal] = useState(false);
   const previewContentRef = useRef<HTMLDivElement>(null);
+  const pendingBackRef = useRef(false);
+
+  const isDirty = isCreating && Boolean(newPost.title.trim() || newPost.description.trim());
 
   const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
   const [newsCount, setNewsCount] = useState(3);
@@ -149,8 +183,31 @@ export default function AdminDashboard() {
       fetchBlogs();
       fetchNewsArticles();
       fetchCronConfig();
+      const draft = loadDraft();
+      if (draft && (draft.post.title || draft.post.description)) setHasDraft(true);
     }
   }, [isAuthenticated]);
+
+  // Silently save on tab close / refresh
+  useEffect(() => {
+    const handler = () => { if (isDirty) saveDraft(newPost, isEditing); };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty, newPost, isEditing]);
+
+  // Intercept browser back button while form is dirty
+  useEffect(() => {
+    if (!isDirty) return;
+    window.history.pushState({ draftGuard: true }, '');
+    const handler = () => {
+      // Re-push guard so we stay on the page
+      window.history.pushState({ draftGuard: true }, '');
+      pendingBackRef.current = true;
+      setShowDraftModal(true);
+    };
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
+  }, [isDirty]);
 
   const checkAuth = async () => {
     try {
@@ -230,6 +287,7 @@ export default function AdminDashboard() {
       });
       const result = await response.json();
       if (result.success) {
+        clearDraft(); setHasDraft(false);
         await fetchBlogs();
         setNewPost({ title: "", description: "", thumbnail: "", links: [] });
         setThumbnailPreview("");
@@ -265,6 +323,7 @@ export default function AdminDashboard() {
       });
       const result = await response.json();
       if (result.success) {
+        clearDraft(); setHasDraft(false);
         await fetchBlogs();
         setNewPost({ title: "", description: "", thumbnail: "", links: [] });
         setThumbnailPreview("");
@@ -281,12 +340,47 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleCancelEdit = () => {
+  const handleRestoreDraft = () => {
+    const draft = loadDraft();
+    if (!draft) return;
+    setNewPost(draft.post);
+    setThumbnailPreview(draft.post.thumbnail || '');
+    setIsEditing(draft.editingId);
+    setIsCreating(true);
+    setIsPreview(false);
+    setHasDraft(false);
+  };
+
+  const handleDiscardDraft = () => { clearDraft(); setHasDraft(false); };
+
+  const resetForm = () => {
     setNewPost({ title: "", description: "", thumbnail: "", links: [] });
     setThumbnailPreview("");
     setIsCreating(false);
     setIsEditing(null);
     setIsPreview(false);
+  };
+
+  const handleCancelEdit = () => {
+    if (isDirty) { setShowDraftModal(true); return; }
+    clearDraft();
+    resetForm();
+  };
+
+  const handleDraftSave = () => {
+    saveDraft(newPost, isEditing);
+    setShowDraftModal(false);
+    resetForm();
+    setHasDraft(true);
+    if (pendingBackRef.current) { pendingBackRef.current = false; setTimeout(() => window.history.go(-2), 0); }
+  };
+
+  const handleDraftDiscard = () => {
+    clearDraft();
+    setShowDraftModal(false);
+    setHasDraft(false);
+    resetForm();
+    if (pendingBackRef.current) { pendingBackRef.current = false; setTimeout(() => window.history.go(-2), 0); }
   };
 
   const handleThumbnailUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -541,6 +635,14 @@ export default function AdminDashboard() {
     <main style={{ background: "var(--bg)", color: "var(--tx-1)", minHeight: "100vh" }}>
       <CenterNavbar />
 
+      {showDraftModal && (
+        <DraftModal
+          onSave={handleDraftSave}
+          onDiscard={handleDraftDiscard}
+          onKeep={() => setShowDraftModal(false)}
+        />
+      )}
+
       {showImagePicker && (
         <ImagePicker
           onSelect={(imageUrl) => {
@@ -567,6 +669,20 @@ export default function AdminDashboard() {
         {/* ── BLOG SECTION ──────────────────────────────────────────── */}
         <section className="mb-16">
           <SectionHeader label="Writing" count={blogPosts.length} />
+
+          {hasDraft && !isCreating && (
+            <div className="mb-5 px-4 py-3 rounded flex items-center justify-between gap-4"
+                 style={{ background: 'oklch(60% 0.11 155 / 0.08)', border: '1px solid oklch(60% 0.11 155 / 0.25)' }}>
+              <div>
+                <p className="text-xs font-medium" style={{ color: 'var(--tx-1)' }}>Draft saved</p>
+                <p className="text-xs" style={{ color: 'var(--tx-3)' }}>You have an unsaved post from your last session.</p>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <button onClick={handleRestoreDraft} style={btnSmall}>Restore</button>
+                <button onClick={handleDiscardDraft} style={{ ...btnSmall, color: 'var(--tx-3)' }}>Discard</button>
+              </div>
+            </div>
+          )}
 
           {!isCreating ? (
             <button
