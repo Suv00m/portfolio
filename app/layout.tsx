@@ -23,7 +23,8 @@ export const metadata: Metadata = {
   title: "Shuvam Mandal",
   description: "Engineer. Building software and AI products.",
   icons: {
-    icon: "/favicon.svg",
+    icon: "/icon.png",
+    apple: "/icon.png",
   },
 };
 
