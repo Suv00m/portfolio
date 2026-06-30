@@ -13,7 +13,7 @@ const projects = [
     status: "Live",
   },
   {
-    title: "Search",
+    title: "srch",
     description: "grep like search tool built in Rust. Fast pattern matching over files.",
     github: "https://github.com/Suv00m/search",
     tags: ["Rust"],

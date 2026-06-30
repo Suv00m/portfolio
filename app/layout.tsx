@@ -19,12 +19,24 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://shuvam.xyz"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://shuvam.in"),
   title: "Shuvam Mandal",
   description: "Engineer. Building software and AI products.",
   icons: {
     icon: "/icon.png",
     apple: "/icon.png",
+  },
+  openGraph: {
+    title: "Shuvam Mandal",
+    description: "Engineer. Builder.",
+    url: "https://shuvam.in",
+    siteName: "Shuvam Mandal",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Shuvam Mandal",
+    description: "Engineer. Builder.",
   },
 };
 

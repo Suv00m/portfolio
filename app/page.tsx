@@ -13,7 +13,7 @@ const projects = [
     year: "2026",
   },
   {
-    title: "Search",
+    title: "srch",
     desc: "grep like search tool in Rust.",
     github: "https://github.com/Suv00m/search",
     year: "2026",
@@ -40,6 +40,150 @@ const socials = [
   { label: "HuggingFace", url: "https://huggingface.co/shuvom",             copy: "https://huggingface.co/shuvom" },
   { label: "Email",       url: "https://mail.google.com/mail/?view=cm&to=shuvammandal121@gmail.com", copy: "shuvammandal121@gmail.com" },
 ];
+
+const SHOWCASE_VIDEOS = [
+  {
+    label: "Agent Demo",
+    src: "https://media.behooked.co/transform/behooked_assets/explore/agent-showcase/agent-demo.webm?op=transcode&w=480&q=60",
+    poster: "https://media.behooked.co/transform/behooked_assets/explore/agent-showcase/agent-demo.webm?op=thumbnail_at&t=00%3A00%3A03&format=webp",
+  },
+  {
+    label: "FAL Agent",
+    src: "https://media.behooked.co/transform/behooked_assets/explore/agent-showcase/agent-fal.webm?op=transcode&w=480&q=60",
+    poster: "https://media.behooked.co/transform/behooked_assets/explore/agent-showcase/agent-fal.webm?op=thumbnail_at&t=00%3A00%3A03&format=webp",
+  },
+];
+
+function VideoHover({ children }: { children: React.ReactNode }) {
+  const [anchor, setAnchor] = useState<{ top: number; left: number } | null>(null);
+  const ref = useRef<HTMLSpanElement>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const show = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      if (!ref.current) return;
+      const r = ref.current.getBoundingClientRect();
+      setAnchor({ top: r.bottom + 10, left: r.left });
+    }, 60);
+  };
+
+  const hide = () => {
+    if (timer.current) clearTimeout(timer.current);
+    setAnchor(null);
+  };
+
+  return (
+    <>
+      <span
+        ref={ref}
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        style={{
+          borderBottom: "1px dotted var(--tx-3)",
+          cursor: "default",
+          transition: "color 0.12s ease-out",
+        }}
+        className="hover:text-[var(--tx-1)]"
+      >
+        {children}
+      </span>
+      {anchor && (
+        <div
+          style={{
+            position: "fixed",
+            top: anchor.top,
+            left: anchor.left,
+            zIndex: 200,
+            display: "flex",
+            gap: "8px",
+            padding: "8px",
+            background: "var(--bg-subtle)",
+            border: "1px solid var(--border)",
+            borderRadius: "8px",
+            boxShadow: "0 20px 56px oklch(0% 0 0 / 0.55)",
+            pointerEvents: "none",
+          }}
+        >
+          {SHOWCASE_VIDEOS.map((v) => (
+            <div key={v.label}>
+              <video
+                src={v.src}
+                poster={v.poster}
+                autoPlay
+                muted
+                loop
+                playsInline
+                style={{
+                  width: "116px",
+                  display: "block",
+                  borderRadius: "4px",
+                  aspectRatio: "9/16",
+                  objectFit: "cover",
+                  background: "var(--bg)",
+                }}
+              />
+              <p style={{ fontSize: "10px", color: "var(--tx-3)", marginTop: "5px", textAlign: "center" }}>
+                {v.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+function TextHover({ children, note }: { children: React.ReactNode; note: string }) {
+  const [anchor, setAnchor] = useState<{ top: number; left: number } | null>(null);
+  const ref = useRef<HTMLSpanElement>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const show = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      if (!ref.current) return;
+      const r = ref.current.getBoundingClientRect();
+      setAnchor({ top: r.bottom + 10, left: r.left });
+    }, 60);
+  };
+
+  const hide = () => {
+    if (timer.current) clearTimeout(timer.current);
+    setAnchor(null);
+  };
+
+  return (
+    <>
+      <span
+        ref={ref}
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        style={{ borderBottom: "1px dotted var(--tx-3)", cursor: "default", transition: "color 0.12s ease-out" }}
+        className="hover:text-[var(--tx-1)]"
+      >
+        {children}
+      </span>
+      {anchor && (
+        <div style={{
+          position: "fixed",
+          top: anchor.top,
+          left: anchor.left,
+          zIndex: 200,
+          maxWidth: "256px",
+          padding: "8px 12px",
+          background: "var(--bg-subtle)",
+          border: "1px solid var(--border)",
+          borderRadius: "6px",
+          boxShadow: "0 12px 40px oklch(0% 0 0 / 0.45)",
+          pointerEvents: "none",
+        }}>
+          <p style={{ fontSize: "11px", lineHeight: "1.6", color: "var(--tx-2)", margin: 0 }}>{note}</p>
+        </div>
+      )}
+    </>
+  );
+}
 
 function SocialLink({ label, url, copy }: { label: string; url: string; copy: string }) {
   const [open, setOpen] = useState(false);
@@ -153,17 +297,29 @@ export default function Home() {
             Engineer. Builder.
           </p>
           <p className="text-sm leading-relaxed" style={{ color: "var(--tx-2)", maxWidth: "52ch" }}>
-            I build software and AI products. Growing{" "}
+            I build software and AI products. Currently building{" "}
+            <TextHover note="Job companion. Helps you find jobs at every point of your life.">dotresume.org</TextHover>
+            {" "}and{" "}
+            <TextHover note="grep-like search tool in Rust. Fast pattern matching over files.">srch</TextHover>.
+            Ex-CTO at{" "}
             <a
               href="https://behooked.co"
               target="_blank"
               rel="noopener noreferrer"
-              className="transition-colors duration-150"
-              style={{ color: "var(--accent)" }}
+              className="transition-colors duration-150 hover:text-[var(--accent)]"
+              style={{ color: "inherit" }}
             >
               behooked.co
-            </a>{" "}
-            from $0 to $1k MRR in 3 months. 2x Kaggle Expert.
+            </a>
+            {" "} — built the multimodal transcoding pipeline handling{" "}
+            <TextHover note="Handles video transcoding, thumbnail generation, and format conversion at scale. Custom pipeline infrastructure built for behooked.co.">100k+ media files</TextHover>,
+            and an AI agent orchestrator that generated{" "}
+            <VideoHover>1.5k+ videos</VideoHover>,
+            out-competing{" "}
+            <TextHover note="Leading AI video platforms backed by VC. The agent system matched and exceeded their output quality.">HeyGen and Caption</TextHover>.
+            Also built yuj, a Hindi LLM with{" "}
+            <TextHover note="yuj-v1: MoE 7B model fine-tuned for Hindi text generation, published on HuggingFace.">3.5k+ monthly downloads</TextHover>.{" "}
+            <TextHover note="Expert rank in both Notebooks and Datasets on Kaggle — top ~1% on the platform.">2x Kaggle Expert</TextHover>.
             Based in India.
           </p>
         </section>
