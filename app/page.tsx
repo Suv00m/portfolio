@@ -43,12 +43,12 @@ const socials = [
 
 const SHOWCASE_VIDEOS = [
   {
-    label: "Agent Demo",
+    label: "Agent Output",
     src: "https://media.behooked.co/transform/behooked_assets/explore/agent-showcase/agent-demo.webm?op=transcode&w=480&q=60",
     poster: "https://media.behooked.co/transform/behooked_assets/explore/agent-showcase/agent-demo.webm?op=thumbnail_at&t=00%3A00%3A03&format=webp",
   },
   {
-    label: "FAL Agent",
+    label: "Agent Output",
     src: "https://media.behooked.co/transform/behooked_assets/explore/agent-showcase/agent-fal.webm?op=transcode&w=480&q=60",
     poster: "https://media.behooked.co/transform/behooked_assets/explore/agent-showcase/agent-fal.webm?op=thumbnail_at&t=00%3A00%3A03&format=webp",
   },
@@ -95,8 +95,6 @@ function VideoHover({ children }: { children: React.ReactNode }) {
             top: anchor.top,
             left: anchor.left,
             zIndex: 200,
-            display: "flex",
-            gap: "8px",
             padding: "8px",
             background: "var(--bg-subtle)",
             border: "1px solid var(--border)",
@@ -105,9 +103,13 @@ function VideoHover({ children }: { children: React.ReactNode }) {
             pointerEvents: "none",
           }}
         >
-          {SHOWCASE_VIDEOS.map((v) => (
-            <div key={v.label}>
+          <p style={{ fontSize: "10px", color: "var(--tx-3)", marginBottom: "6px", letterSpacing: "0.06em" }}>
+            Agent Output
+          </p>
+          <div style={{ display: "flex", gap: "8px" }}>
+            {SHOWCASE_VIDEOS.map((v, i) => (
               <video
+                key={i}
                 src={v.src}
                 poster={v.poster}
                 autoPlay
@@ -123,11 +125,8 @@ function VideoHover({ children }: { children: React.ReactNode }) {
                   background: "var(--bg)",
                 }}
               />
-              <p style={{ fontSize: "10px", color: "var(--tx-3)", marginTop: "5px", textAlign: "center" }}>
-                {v.label}
-              </p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </>
