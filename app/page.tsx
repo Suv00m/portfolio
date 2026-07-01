@@ -184,6 +184,151 @@ function TextHover({ children, note }: { children: React.ReactNode; note: string
   );
 }
 
+const CELL_COLORS = [
+  "oklch(16% 0.007 195)",
+  "oklch(28% 0.08 155)",
+  "oklch(40% 0.10 155)",
+  "oklch(52% 0.11 155)",
+  "oklch(60% 0.11 155)",
+];
+const DAY_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""];
+
+function ContributionGraph() {
+  const [weeks, setWeeks] = useState<{ date: string; level: number; count: number }[][]>([]);
+  const [monthMarks, setMonthMarks] = useState<{ col: number; label: string }[]>([]);
+  const [tip, setTip] = useState<{ x: number; y: number; date: string; count: number } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/github")
+      .then((r) => r.json())
+      .then((d) => {
+        const contribs: { date: string; count: number; level: number }[] = d.contributions ?? [];
+        const map: Record<string, { level: number; count: number }> = {};
+        for (const c of contribs) map[c.date] = { level: c.level, count: c.count };
+
+        const today = new Date();
+        const offset = today.getDay();
+        const gridStart = new Date(today);
+        gridStart.setDate(today.getDate() - offset - 51 * 7);
+        gridStart.setHours(0, 0, 0, 0);
+
+        const grid: { date: string; level: number; count: number }[][] = [];
+        const marks: { col: number; label: string }[] = [];
+        let lastMonth = -1;
+
+        for (let w = 0; w < 52; w++) {
+          const week: { date: string; level: number; count: number }[] = [];
+          for (let d = 0; d < 7; d++) {
+            const dt = new Date(gridStart);
+            dt.setDate(gridStart.getDate() + w * 7 + d);
+            const str = dt.toISOString().slice(0, 10);
+            week.push({ date: str, ...(map[str] ?? { level: 0, count: 0 }) });
+            if (d === 0 && dt.getMonth() !== lastMonth) {
+              lastMonth = dt.getMonth();
+              marks.push({ col: w, label: dt.toLocaleString("en-US", { month: "short" }) });
+            }
+          }
+          grid.push(week);
+        }
+
+        setWeeks(grid);
+        setMonthMarks(marks);
+      })
+      .catch(() => {});
+  }, []);
+
+  if (!weeks.length) return null;
+
+  const cell = 10;
+  const gap = 2;
+  const step = cell + gap;
+
+  return (
+    <section className="mb-16">
+      <p className="text-xs font-medium uppercase mb-4" style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}>
+        Activity
+      </p>
+      <div style={{ overflowX: "auto", paddingBottom: "4px" }}>
+        <div style={{ display: "inline-flex", gap: "4px" }}>
+          {/* Day labels */}
+          <div style={{ display: "flex", flexDirection: "column", gap: `${gap}px`, paddingTop: "18px", width: "24px" }}>
+            {DAY_LABELS.map((label, i) => (
+              <div
+                key={i}
+                style={{ height: `${cell}px`, fontSize: "9px", color: "var(--tx-3)", display: "flex", alignItems: "center", justifyContent: "flex-end" }}
+              >
+                {label}
+              </div>
+            ))}
+          </div>
+          {/* Month row + grid */}
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ height: "14px", position: "relative", marginBottom: "4px" }}>
+              {monthMarks.map((m) => (
+                <span
+                  key={m.col}
+                  style={{ position: "absolute", left: m.col * step, fontSize: "10px", color: "var(--tx-3)", whiteSpace: "nowrap" }}
+                >
+                  {m.label}
+                </span>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: `${gap}px` }}>
+              {weeks.map((week, wi) => (
+                <div key={wi} style={{ display: "flex", flexDirection: "column", gap: `${gap}px` }}>
+                  {week.map((day) => (
+                    <div
+                      key={day.date}
+                      onMouseEnter={(e) => {
+                        const r = (e.target as HTMLElement).getBoundingClientRect();
+                        setTip({ x: r.left + r.width / 2, y: r.top - 8, date: day.date, count: day.count });
+                      }}
+                      onMouseLeave={() => setTip(null)}
+                      style={{
+                        width: `${cell}px`,
+                        height: `${cell}px`,
+                        borderRadius: "2px",
+                        background: CELL_COLORS[day.level] ?? CELL_COLORS[0],
+                        cursor: "default",
+                      }}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      {tip && (
+        <div
+          style={{
+            position: "fixed",
+            top: tip.y,
+            left: tip.x,
+            transform: "translate(-50%, -100%)",
+            zIndex: 200,
+            padding: "5px 10px",
+            background: "var(--bg-subtle)",
+            border: "1px solid var(--border)",
+            borderRadius: "6px",
+            boxShadow: "0 8px 24px oklch(0% 0 0 / 0.45)",
+            pointerEvents: "none",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <p style={{ fontSize: "11px", color: "var(--tx-2)", margin: 0 }}>
+            <span style={{ color: "var(--tx-1)" }}>
+              {tip.count} contribution{tip.count !== 1 ? "s" : ""}
+            </span>
+            {" · "}
+            {new Date(tip.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function SocialLink({ label, url, copy }: { label: string; url: string; copy: string }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -417,6 +562,9 @@ export default function Home() {
             All posts →
           </Link>
         </section>
+
+        {/* Activity */}
+        <ContributionGraph />
 
         {/* Elsewhere */}
         <section>
