@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 interface IdeaBoxProps {
+  content?: string;
   onInsertTitle?: (title: string) => void;
   onInsertContent?: (content: string) => void;
 }
@@ -20,7 +21,7 @@ const inputStyle: React.CSSProperties = {
   resize: "vertical" as const,
 };
 
-export default function IdeaBox({ onInsertTitle, onInsertContent }: IdeaBoxProps) {
+export default function IdeaBox({ content, onInsertTitle, onInsertContent }: IdeaBoxProps) {
   const [activeTab, setActiveTab] = useState<"ideas" | "assist">("ideas");
   const [ideas, setIdeas] = useState<string[]>([]);
   const [isGeneratingIdeas, setIsGeneratingIdeas] = useState(false);
@@ -205,12 +206,24 @@ export default function IdeaBox({ onInsertTitle, onInsertContent }: IdeaBoxProps
           </div>
 
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--tx-2)" }}>Content</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-medium" style={{ color: "var(--tx-2)" }}>Content</label>
+              {!!content?.trim() && (
+                <button
+                  type="button"
+                  onClick={() => setAssistContent(content)}
+                  className="text-xs transition-colors hover:text-[var(--accent-hi)]"
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--accent)", padding: 0 }}
+                >
+                  Use post content
+                </button>
+              )}
+            </div>
             <textarea
               value={assistContent}
               onChange={(e) => setAssistContent(e.target.value)}
               rows={5}
-              placeholder="Paste content here..."
+              placeholder="Paste content here, or use post content above..."
               style={inputStyle}
             />
           </div>
@@ -283,7 +296,7 @@ export default function IdeaBox({ onInsertTitle, onInsertContent }: IdeaBoxProps
                   cursor: "pointer",
                 }}
               >
-                Insert into editor
+                Replace post content
               </button>
             </div>
           )}

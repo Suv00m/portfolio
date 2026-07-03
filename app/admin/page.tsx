@@ -10,15 +10,34 @@ import { BlogPost, BlogLink, NewsArticle } from "@/lib/types";
 import { processEmbedContent } from "@/lib/embed-utils";
 import { initializeCopyButtons } from "@/lib/code-copy-utils";
 
-const DRAFT_KEY = 'admin_post_draft';
+const DRAFTS_KEY = 'admin_post_drafts';
 
-function saveDraft(post: { title: string; description: string; thumbnail: string; links: BlogLink[] }, editingId: string | null) {
-  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ post, editingId })); } catch {}
+type Draft = {
+  id: string;
+  post: { title: string; description: string; thumbnail: string; links: BlogLink[] };
+  editingId: string | null;
+  savedAt: number;
+};
+
+function loadDrafts(): Draft[] {
+  try { const r = localStorage.getItem(DRAFTS_KEY); return r ? JSON.parse(r) : []; } catch { return []; }
 }
-function loadDraft(): { post: { title: string; description: string; thumbnail: string; links: BlogLink[] }; editingId: string | null } | null {
-  try { const r = localStorage.getItem(DRAFT_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
+function saveDraftsList(drafts: Draft[]) {
+  try { localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts)); } catch {}
 }
-function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch {} }
+function upsertDraft(id: string, post: Draft['post'], editingId: string | null): Draft[] {
+  const drafts = loadDrafts();
+  const idx = drafts.findIndex((d) => d.id === id);
+  const entry: Draft = { id, post, editingId, savedAt: Date.now() };
+  if (idx >= 0) drafts[idx] = entry; else drafts.unshift(entry);
+  saveDraftsList(drafts);
+  return drafts;
+}
+function removeDraft(id: string): Draft[] {
+  const drafts = loadDrafts().filter((d) => d.id !== id);
+  saveDraftsList(drafts);
+  return drafts;
+}
 
 const ERR  = "oklch(62% 0.18 22)";
 const OK   = "oklch(62% 0.15 145)";
@@ -135,10 +154,15 @@ export default function AdminDashboard() {
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [newLink, setNewLink] = useState({ text: "", url: "" });
-  const [hasDraft, setHasDraft] = useState(false);
+  const [drafts, setDrafts] = useState<Draft[]>([]);
   const [showDraftModal, setShowDraftModal] = useState(false);
   const previewContentRef = useRef<HTMLDivElement>(null);
   const pendingBackRef = useRef(false);
+  const draftIdRef = useRef<string | null>(null);
+  const getOrCreateDraftId = () => {
+    if (!draftIdRef.current) draftIdRef.current = crypto.randomUUID();
+    return draftIdRef.current;
+  };
 
   const isDirty = isCreating && Boolean(newPost.title.trim() || newPost.description.trim());
 
@@ -183,14 +207,13 @@ export default function AdminDashboard() {
       fetchBlogs();
       fetchNewsArticles();
       fetchCronConfig();
-      const draft = loadDraft();
-      if (draft && (draft.post.title || draft.post.description)) setHasDraft(true);
+      setDrafts(loadDrafts());
     }
   }, [isAuthenticated]);
 
   // Silently save on tab close / refresh
   useEffect(() => {
-    const handler = () => { if (isDirty) saveDraft(newPost, isEditing); };
+    const handler = () => { if (isDirty) upsertDraft(getOrCreateDraftId(), newPost, isEditing); };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [isDirty, newPost, isEditing]);
@@ -287,7 +310,7 @@ export default function AdminDashboard() {
       });
       const result = await response.json();
       if (result.success) {
-        clearDraft(); setHasDraft(false);
+        if (draftIdRef.current) { setDrafts(removeDraft(draftIdRef.current)); draftIdRef.current = null; }
         await fetchBlogs();
         setNewPost({ title: "", description: "", thumbnail: "", links: [] });
         setThumbnailPreview("");
@@ -303,6 +326,7 @@ export default function AdminDashboard() {
   };
 
   const handleEditPost = (post: BlogPost) => {
+    draftIdRef.current = null;
     setNewPost({ title: post.title, description: post.description, thumbnail: post.thumbnail || "", links: post.links || [] });
     setThumbnailPreview(post.thumbnail || "");
     setIsEditing(post.id);
@@ -323,7 +347,7 @@ export default function AdminDashboard() {
       });
       const result = await response.json();
       if (result.success) {
-        clearDraft(); setHasDraft(false);
+        if (draftIdRef.current) { setDrafts(removeDraft(draftIdRef.current)); draftIdRef.current = null; }
         await fetchBlogs();
         setNewPost({ title: "", description: "", thumbnail: "", links: [] });
         setThumbnailPreview("");
@@ -340,18 +364,21 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleRestoreDraft = () => {
-    const draft = loadDraft();
+  const handleRestoreDraft = (id: string) => {
+    const draft = drafts.find((d) => d.id === id);
     if (!draft) return;
     setNewPost(draft.post);
     setThumbnailPreview(draft.post.thumbnail || '');
     setIsEditing(draft.editingId);
     setIsCreating(true);
     setIsPreview(false);
-    setHasDraft(false);
+    draftIdRef.current = draft.id;
   };
 
-  const handleDiscardDraft = () => { clearDraft(); setHasDraft(false); };
+  const handleDiscardDraft = (id: string) => {
+    setDrafts(removeDraft(id));
+    if (draftIdRef.current === id) draftIdRef.current = null;
+  };
 
   const resetForm = () => {
     setNewPost({ title: "", description: "", thumbnail: "", links: [] });
@@ -363,22 +390,22 @@ export default function AdminDashboard() {
 
   const handleCancelEdit = () => {
     if (isDirty) { setShowDraftModal(true); return; }
-    clearDraft();
+    if (draftIdRef.current) { setDrafts(removeDraft(draftIdRef.current)); draftIdRef.current = null; }
     resetForm();
   };
 
   const handleDraftSave = () => {
-    saveDraft(newPost, isEditing);
+    setDrafts(upsertDraft(getOrCreateDraftId(), newPost, isEditing));
+    draftIdRef.current = null;
     setShowDraftModal(false);
     resetForm();
-    setHasDraft(true);
     if (pendingBackRef.current) { pendingBackRef.current = false; setTimeout(() => window.history.go(-2), 0); }
   };
 
   const handleDraftDiscard = () => {
-    clearDraft();
+    if (draftIdRef.current) setDrafts(removeDraft(draftIdRef.current));
+    draftIdRef.current = null;
     setShowDraftModal(false);
-    setHasDraft(false);
     resetForm();
     if (pendingBackRef.current) { pendingBackRef.current = false; setTimeout(() => window.history.go(-2), 0); }
   };
@@ -670,23 +697,30 @@ export default function AdminDashboard() {
         <section className="mb-16">
           <SectionHeader label="Writing" count={blogPosts.length} />
 
-          {hasDraft && !isCreating && (
-            <div className="mb-5 px-4 py-3 rounded flex items-center justify-between gap-4"
-                 style={{ background: 'oklch(60% 0.11 155 / 0.08)', border: '1px solid oklch(60% 0.11 155 / 0.25)' }}>
-              <div>
-                <p className="text-xs font-medium" style={{ color: 'var(--tx-1)' }}>Draft saved</p>
-                <p className="text-xs" style={{ color: 'var(--tx-3)' }}>You have an unsaved post from your last session.</p>
-              </div>
-              <div className="flex gap-2 shrink-0">
-                <button onClick={handleRestoreDraft} style={btnSmall}>Restore</button>
-                <button onClick={handleDiscardDraft} style={{ ...btnSmall, color: 'var(--tx-3)' }}>Discard</button>
-              </div>
+          {drafts.length > 0 && !isCreating && (
+            <div className="mb-5 space-y-2">
+              {drafts.map((d) => (
+                <div key={d.id} className="px-4 py-3 rounded flex items-center justify-between gap-4"
+                     style={{ background: 'oklch(60% 0.11 155 / 0.08)', border: '1px solid oklch(60% 0.11 155 / 0.25)' }}>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium truncate" style={{ color: 'var(--tx-1)' }}>{d.post.title || "Untitled draft"}</p>
+                    <p className="text-xs" style={{ color: 'var(--tx-3)' }}>
+                      Saved {new Date(d.savedAt).toLocaleString()}{d.editingId ? " · editing existing post" : ""}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button onClick={() => handleRestoreDraft(d.id)} style={btnSmall}>Restore</button>
+                    <button onClick={() => handleDiscardDraft(d.id)} style={{ ...btnSmall, color: 'var(--tx-3)' }}>Discard</button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
           {!isCreating ? (
             <button
               onClick={() => {
+                draftIdRef.current = null;
                 setIsCreating(true);
                 setIsEditing(null);
                 setNewPost({ title: "", description: "", thumbnail: "", links: [] });
@@ -718,11 +752,9 @@ export default function AdminDashboard() {
               {!isPreview && (
                 <div className="mb-5">
                   <IdeaBox
+                    content={newPost.description}
                     onInsertTitle={(title) => setNewPost({ ...newPost, title })}
-                    onInsertContent={(content) => {
-                      const cur = newPost.description || "";
-                      setNewPost({ ...newPost, description: cur ? `${cur}\n\n${content}` : content });
-                    }}
+                    onInsertContent={(content) => setNewPost((p) => ({ ...p, description: content }))}
                   />
                 </div>
               )}
@@ -850,6 +882,10 @@ export default function AdminDashboard() {
                   <div className="flex gap-3 pt-1">
                     <button type="submit" style={btnPrimary}>
                       {isEditing ? "Update post" : "Publish post"}
+                    </button>
+                    <button type="button" onClick={handleDraftSave} disabled={!isDirty}
+                            style={{ ...btnSecondary, opacity: isDirty ? 1 : 0.5, cursor: isDirty ? "pointer" : "not-allowed" }}>
+                      Add to draft
                     </button>
                     <button type="button" onClick={handleCancelEdit} style={btnSecondary}>Cancel</button>
                   </div>

@@ -455,7 +455,7 @@ export default function Home() {
             >
               behooked.co
             </a>
-            {" "} — built the multimodal transcoding pipeline handling{" "}
+            {" "}, built the multimodal transcoding pipeline handling{" "}
             <TextHover note="Handles video transcoding, thumbnail generation, and format conversion at scale. Custom pipeline infrastructure built for behooked.co.">100k+ media files</TextHover>,
             and an AI agent orchestrator that generated{" "}
             <VideoHover>1.5k+ videos</VideoHover>,
