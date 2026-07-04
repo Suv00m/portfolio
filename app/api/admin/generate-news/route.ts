@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth-middleware';
 import { getTrendingTopics, getPostDetails, NewsTopic } from '@/lib/reddit';
 import { getTrendingHNTopics, getHNComments } from '@/lib/hackernews';
 import { getTrendingPapers } from '@/lib/papers';
+import { selectTopTopics } from '@/lib/topic-ranking';
 import { generateNewsArticle } from '@/lib/news-generator';
 import { createNewsArticle } from '@/lib/news';
 
@@ -18,32 +19,26 @@ export async function POST(request: NextRequest) {
     const subreddits = body.subreddits || undefined;
     const sources: string[] = body.sources || ['reddit', 'hackernews', 'papers'];
 
-    // Fetch from selected sources in parallel
-    const fetches: Promise<NewsTopic[]>[] = [];
-    if (sources.includes('reddit')) fetches.push(getTrendingTopics(count + 2, subreddits));
-    if (sources.includes('hackernews')) fetches.push(getTrendingHNTopics(count + 2));
-    if (sources.includes('papers')) fetches.push(getTrendingPapers(count + 2));
+    // Fetch from selected sources in parallel, keeping each source's results separate
+    // so none of them can crowd another out during selection (see selectTopTopics).
+    const sourceFetches: { source: string; promise: Promise<NewsTopic[]> }[] = [];
+    if (sources.includes('reddit')) sourceFetches.push({ source: 'reddit', promise: getTrendingTopics(count + 2, subreddits) });
+    if (sources.includes('hackernews')) sourceFetches.push({ source: 'hackernews', promise: getTrendingHNTopics(count + 2) });
+    if (sources.includes('papers')) sourceFetches.push({ source: 'papers', promise: getTrendingPapers(count + 2) });
 
-    const results_arr = await Promise.all(fetches);
+    const perSourceTopics = await Promise.all(sourceFetches.map((s) => s.promise));
+    const sourceCounts = Object.fromEntries(
+      sourceFetches.map((s, i) => [s.source, perSourceTopics[i].length])
+    );
 
-    // Combine and rank by engagement rate
-    const allTopics: (NewsTopic & { engagementRate: number })[] = results_arr
-      .flat()
-      .map((topic) => {
-      const now = Date.now() / 1000;
-      const ageHours = Math.max((now - topic.created_utc) / 3600, 1);
-      const engagementRate = (topic.score + topic.num_comments * 2) / ageHours;
-      return { ...topic, engagementRate };
-    });
-
-    allTopics.sort((a, b) => b.engagementRate - a.engagementRate);
-    const topics = allTopics.slice(0, count);
+    const topics = selectTopTopics(perSourceTopics, count);
 
     if (topics.length === 0) {
       return NextResponse.json({
         success: true,
         message: 'No new trending topics found',
         articlesCreated: 0,
+        sourceCounts,
       });
     }
 
@@ -74,6 +69,7 @@ export async function POST(request: NextRequest) {
       success: true,
       articlesCreated: results.length,
       articles: results,
+      sourceCounts,
     });
   } catch (error) {
     console.error('Generate news error:', error);

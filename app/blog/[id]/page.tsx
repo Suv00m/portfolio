@@ -8,8 +8,10 @@ import { LinkPreview } from "@/components/ui/link-preview";
 import { BlogPost } from "@/lib/types";
 import { processEmbedContent } from "@/lib/embed-utils";
 import { initializeCopyButtons } from "@/lib/code-copy-utils";
+import { formatLinkLabel, formatLinkDomain } from "@/lib/link-utils";
 import ReactionBar from "@/components/ReactionBar";
 import ViewCounter from "@/components/ViewCounter";
+import { ArrowUpRight } from "lucide-react";
 
 export default function SingleBlog() {
   const params = useParams();
@@ -149,16 +151,27 @@ export default function SingleBlog() {
                 Links
               </p>
               <div className="space-y-2">
-                {blogPost.links.map((link, i) => (
-                  <div key={i}>
-                    <LinkPreview
-                      url={link.url}
-                      className="text-sm transition-colors hover:text-[var(--accent-hi)] text-[var(--accent)]"
-                    >
-                      {link.text} →
-                    </LinkPreview>
-                  </div>
-                ))}
+                {blogPost.links.map((link, i) => {
+                  const label = formatLinkLabel(link);
+                  const domain = formatLinkDomain(link.url);
+                  return (
+                    <div key={i}>
+                      <LinkPreview
+                        url={link.url}
+                        className="group inline-flex items-center gap-2 text-[var(--accent)]"
+                      >
+                        <span className="text-sm transition-colors group-hover:text-[var(--accent-hi)]">
+                          {label}
+                        </span>
+                        {label !== domain && (
+                          <span className="text-xs font-mono truncate" style={{ color: "var(--tx-3)" }}>{domain}</span>
+                        )}
+                        <ArrowUpRight size={13} className="shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                                      style={{ color: "var(--tx-3)" }} />
+                      </LinkPreview>
+                    </div>
+                  );
+                })}
               </div>
             </section>
           )}

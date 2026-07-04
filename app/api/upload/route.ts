@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { supabaseAdmin } from '@/lib/supabase';
 import { requireAuth } from '@/lib/auth-middleware';
+
+const BUCKET = 'blog-images';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,25 +36,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads');
-    await mkdir(uploadsDir, { recursive: true });
+    // ponytail: lazily provisions the bucket on first use instead of a one-off migration step
+    const { error: bucketError } = await supabaseAdmin.storage.createBucket(BUCKET, { public: true });
+    if (bucketError && !bucketError.message.includes('already exists')) {
+      return NextResponse.json({ success: false, error: bucketError.message }, { status: 500 });
+    }
 
     // Generate unique filename
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 15);
     const extension = file.name.split('.').pop();
     const filename = `${timestamp}-${randomStr}.${extension}`;
-    const filepath = join(uploadsDir, filename);
 
-    // Convert file to buffer and save
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .upload(filename, bytes, { contentType: file.type });
 
-    // Return the public URL
-    const url = `/uploads/${filename}`;
-    return NextResponse.json({ success: true, url });
+    if (uploadError) {
+      return NextResponse.json(
+        { success: false, error: uploadError.message },
+        { status: 500 }
+      );
+    }
+
+    const { data: { publicUrl } } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(filename);
+    return NextResponse.json({ success: true, url: publicUrl });
   } catch (error) {
     console.error('Error uploading file:', error);
     return NextResponse.json(

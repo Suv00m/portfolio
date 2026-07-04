@@ -1,6 +1,8 @@
 "use client";
 
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, Extension } from '@tiptap/react';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
+import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
@@ -9,12 +11,70 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import MarkdownIt from 'markdown-it';
+import {
+  Highlighter, List, ListOrdered, Quote as QuoteIcon, Code, Braces,
+  Sparkles, Wand2, Link as LinkIcon, ImagePlus, Undo2, Redo2,
+} from 'lucide-react';
+import IdeaBox, { AssistAction } from './IdeaBox';
+
+const markdown = new MarkdownIt();
 
 interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
   placeholder?: string;
 }
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    flashHighlight: {
+      flashRange: (from: number, to: number) => ReturnType;
+    };
+  }
+}
+
+// Purely visual — a decoration never touches the document, so it can't leak
+// into saved content and doesn't hijack the user's selection while it fades.
+const flashHighlightKey = new PluginKey('flashHighlight');
+
+const FlashHighlight = Extension.create({
+  name: 'flashHighlight',
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: flashHighlightKey,
+        state: {
+          init: () => DecorationSet.empty,
+          apply(tr, old) {
+            const meta = tr.getMeta(flashHighlightKey);
+            if (meta) {
+              return DecorationSet.create(tr.doc, [
+                Decoration.inline(meta.from, meta.to, { class: 'ai-flash' }),
+              ]);
+            }
+            return old.map(tr.mapping, tr.doc);
+          },
+        },
+        props: {
+          decorations(state) {
+            return this.getState(state);
+          },
+        },
+      }),
+    ];
+  },
+  addCommands() {
+    return {
+      flashRange:
+        (from: number, to: number) =>
+        ({ tr, dispatch }: { tr: any; dispatch?: (tr: any) => void }) => {
+          if (dispatch) tr.setMeta(flashHighlightKey, { from, to });
+          return true;
+        },
+    } as any;
+  },
+});
 
 export default function RichTextEditor({
   content,
@@ -25,8 +85,29 @@ export default function RichTextEditor({
   const [aiSuggestion, setAiSuggestion] = useState<string>('');
   const [isAILoading, setIsAILoading] = useState(false);
   const [isAIEnabled, setIsAIEnabled] = useState(true);
+  const [showIdeaBox, setShowIdeaBox] = useState(false);
+  const [assistingAction, setAssistingAction] = useState<AssistAction | null>(null);
   const autocompleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const ideaBoxRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showIdeaBox) return;
+    const handleClick = (e: MouseEvent) => {
+      if (ideaBoxRef.current && !ideaBoxRef.current.contains(e.target as Node)) {
+        setShowIdeaBox(false);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowIdeaBox(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [showIdeaBox]);
 
   const triggerAutocomplete = useCallback(async (editorInstance: any) => {
     if (!isAIEnabled || isAILoading) return;
@@ -106,6 +187,7 @@ export default function RichTextEditor({
       Placeholder.configure({
         placeholder,
       }),
+      FlashHighlight,
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -234,12 +316,67 @@ export default function RichTextEditor({
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   };
 
+  const applyAssist = async (action: AssistAction) => {
+    if (!editor || assistingAction) return;
+
+    const { from, to, empty } = editor.state.selection;
+    const range = empty ? { from: 0, to: editor.state.doc.content.size } : { from, to };
+    const sourceText = editor.state.doc.textBetween(range.from, range.to, '\n\n');
+
+    if (!sourceText.trim()) {
+      alert('Add some content first');
+      return;
+    }
+
+    setAssistingAction(action);
+    // Locked so the range captured above can't drift out from under us while the request is in flight.
+    editor.setEditable(false);
+    try {
+      const response = await fetch('/api/ai/assist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: sourceText, action }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        alert('Failed to process content: ' + (data.error || 'Unknown error'));
+        return;
+      }
+
+      const resultText = (data.result || '').trim();
+      if (!resultText) return;
+
+      // Markdown headings/lists/bold arrive as real markup here, parsed through the
+      // editor's own HTML parser — not flattened into plain paragraphs.
+      const html = markdown.render(resultText);
+      const sizeBefore = editor.state.doc.content.size;
+      editor.chain().focus().insertContentAt(range, html).run();
+      const sizeAfter = editor.state.doc.content.size;
+      const insertedSize = sizeAfter - sizeBefore + (range.to - range.from);
+      const insertedTo = range.from + insertedSize;
+
+      editor.chain()
+        .setTextSelection(insertedTo)
+        .flashRange(range.from, insertedTo)
+        .run();
+    } catch (error) {
+      console.error('Writing assistant error:', error);
+      alert('Failed to process content');
+    } finally {
+      editor.setEditable(true);
+      setAssistingAction(null);
+      setShowIdeaBox(false);
+    }
+  };
 
   if (!editor) {
     return null;
   }
 
   const tbBtn = (active: boolean, disabled = false): React.CSSProperties => ({
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     padding: "0.25rem 0.5rem",
     borderRadius: "3px",
     fontSize: "0.8125rem",
@@ -277,7 +414,7 @@ export default function RichTextEditor({
         <button type="button" title="Highlight"
                 onClick={() => editor.chain().focus().toggleHighlight().run()}
                 style={tbBtn(editor.isActive("highlight"))}>
-          H
+          <Highlighter size={15} strokeWidth={2} />
         </button>
 
         {sep}
@@ -296,13 +433,19 @@ export default function RichTextEditor({
 
         <button type="button" title="Bullet list"
                 onClick={() => editor.chain().focus().toggleBulletList().run()}
-                style={tbBtn(editor.isActive("bulletList"))}>•</button>
+                style={tbBtn(editor.isActive("bulletList"))}>
+          <List size={15} strokeWidth={2} />
+        </button>
         <button type="button" title="Numbered list"
                 onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                style={tbBtn(editor.isActive("orderedList"))}>1.</button>
+                style={tbBtn(editor.isActive("orderedList"))}>
+          <ListOrdered size={15} strokeWidth={2} />
+        </button>
         <button type="button" title="Quote"
                 onClick={() => editor.chain().focus().toggleBlockquote().run()}
-                style={tbBtn(editor.isActive("blockquote"))}>❝</button>
+                style={tbBtn(editor.isActive("blockquote"))}>
+          <QuoteIcon size={15} strokeWidth={2} />
+        </button>
 
         {sep}
 
@@ -310,11 +453,13 @@ export default function RichTextEditor({
                 onClick={() => editor.chain().focus().toggleCode().run()}
                 disabled={!editor.can().chain().focus().toggleCode().run()}
                 style={tbBtn(editor.isActive("code"), !editor.can().chain().focus().toggleCode().run())}>
-          {"</>"}
+          <Code size={15} strokeWidth={2} />
         </button>
         <button type="button" title="Code block"
                 onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-                style={tbBtn(editor.isActive("codeBlock"))}>{"{ }"}</button>
+                style={tbBtn(editor.isActive("codeBlock"))}>
+          <Braces size={15} strokeWidth={2} />
+        </button>
 
         {sep}
 
@@ -322,18 +467,44 @@ export default function RichTextEditor({
                 title={isAIEnabled ? "AI autocomplete on (Tab=accept, Esc=dismiss)" : "AI autocomplete off"}
                 onClick={() => setIsAIEnabled(!isAIEnabled)}
                 style={tbBtn(isAIEnabled)}>
-          {isAILoading ? "…" : "✦"}
+          {isAILoading ? "…" : <Sparkles size={15} strokeWidth={2} />}
         </button>
+
+        <div ref={ideaBoxRef} style={{ position: "relative" }}>
+          <button type="button" title="Writing assistant"
+                  onClick={() => setShowIdeaBox((v) => !v)}
+                  style={tbBtn(showIdeaBox)}>
+            <Wand2 size={15} strokeWidth={2} />
+          </button>
+          {showIdeaBox && (
+            <div style={{
+              position: "absolute",
+              top: "calc(100% + 6px)",
+              left: 0,
+              zIndex: 20,
+              boxShadow: "0 8px 24px oklch(0% 0 0 / 0.35)",
+              borderRadius: "6px",
+            }}>
+              <IdeaBox
+                scope={editor.state.selection.empty ? "post" : "selection"}
+                activeAction={assistingAction}
+                onApply={applyAssist}
+              />
+            </div>
+          )}
+        </div>
 
         {sep}
 
         <button type="button" title="Add link"
                 onClick={setLink}
-                style={tbBtn(editor.isActive("link"))}>🔗</button>
+                style={tbBtn(editor.isActive("link"))}>
+          <LinkIcon size={15} strokeWidth={2} />
+        </button>
         <button type="button" title="Upload image"
                 onClick={addImage} disabled={isUploading}
                 style={tbBtn(false, isUploading)}>
-          {isUploading ? "…" : "🖼"}
+          {isUploading ? "…" : <ImagePlus size={15} strokeWidth={2} />}
         </button>
 
         {sep}
@@ -341,18 +512,30 @@ export default function RichTextEditor({
         <button type="button" title="Undo"
                 onClick={() => editor.chain().focus().undo().run()}
                 disabled={!editor.can().chain().focus().undo().run()}
-                style={tbBtn(false, !editor.can().chain().focus().undo().run())}>↶</button>
+                style={tbBtn(false, !editor.can().chain().focus().undo().run())}>
+          <Undo2 size={15} strokeWidth={2} />
+        </button>
         <button type="button" title="Redo"
                 onClick={() => editor.chain().focus().redo().run()}
                 disabled={!editor.can().chain().focus().redo().run()}
-                style={tbBtn(false, !editor.can().chain().focus().redo().run())}>↷</button>
+                style={tbBtn(false, !editor.can().chain().focus().redo().run())}>
+          <Redo2 size={15} strokeWidth={2} />
+        </button>
       </div>
 
       <input ref={fileInputRef} type="file" accept="image/*" onChange={onFileInputChange} className="hidden" />
 
       {/* Editor area */}
       <div className="relative" style={{ background: "var(--bg-hover)" }}>
-        <EditorContent editor={editor} style={{ minHeight: "300px", color: "var(--tx-1)" }} />
+        <EditorContent
+          editor={editor}
+          style={{
+            minHeight: "300px",
+            color: "var(--tx-1)",
+            opacity: assistingAction ? 0.6 : 1,
+            transition: "opacity 0.15s ease-out",
+          }}
+        />
         {aiSuggestion && isAIEnabled && (
           <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2"
                style={{ background: "var(--bg-subtle)", borderTop: "1px solid var(--border)" }}>

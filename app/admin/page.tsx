@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import CenterNavbar from "@/components/CenterNavbar";
 import RichTextEditor from "@/components/RichTextEditor";
-import IdeaBox from "@/components/IdeaBox";
 import ImagePicker from "@/components/ImagePicker";
 import { BlogPost, BlogLink, NewsArticle } from "@/lib/types";
 import { processEmbedContent } from "@/lib/embed-utils";
 import { initializeCopyButtons } from "@/lib/code-copy-utils";
+import { formatLinkLabel, formatLinkDomain } from "@/lib/link-utils";
+import { ArrowUpRight } from "lucide-react";
 
 const DRAFTS_KEY = 'admin_post_drafts';
 
@@ -85,6 +86,18 @@ const btnSmall: React.CSSProperties = {
   fontSize: "0.75rem",
   cursor: "pointer",
 };
+
+const tabBtn = (active: boolean): React.CSSProperties => ({
+  padding: "0.25rem 0.75rem",
+  fontSize: "0.75rem",
+  fontWeight: 500,
+  border: "none",
+  borderRadius: "3px",
+  cursor: "pointer",
+  background: active ? "var(--accent)" : "transparent",
+  color: active ? "var(--bg)" : "var(--tx-2)",
+  transition: "background 0.12s, color 0.12s",
+});
 
 const OK_BG  = "oklch(62% 0.15 145 / 0.12)";
 const ERR_BG = "oklch(62% 0.18 22 / 0.12)";
@@ -512,10 +525,13 @@ export default function AdminDashboard() {
       });
       const result = await response.json();
       if (result.success) {
+        const breakdown = result.sourceCounts
+          ? ` (${Object.entries(result.sourceCounts).map(([s, n]) => `${s}: ${n}`).join(", ")})`
+          : "";
         setNewsResult({
-          message: result.articlesCreated > 0
+          message: (result.articlesCreated > 0
             ? `Generated ${result.articlesCreated} article${result.articlesCreated > 1 ? "s" : ""}`
-            : result.message || "No new trending topics found",
+            : result.message || "No new trending topics found") + breakdown,
           type: "success",
         });
         await fetchNewsArticles();
@@ -732,32 +748,30 @@ export default function AdminDashboard() {
             </button>
           ) : (
             <div>
-              {/* Form header */}
-              <div className="flex items-center justify-between mb-5">
+              {/* Form header — sticky so Write/Preview stays reachable while scrolling the form */}
+              <div className="sticky flex items-center justify-between mb-5 py-3"
+                   style={{ top: "4.5rem", zIndex: 30, background: "var(--bg)", borderBottom: "1px solid var(--border-faint)" }}>
                 <p className="text-sm" style={{ color: "var(--tx-2)" }}>
-                  {isEditing ? "Editing post" : isPreview ? "Preview" : "New post"}
+                  {isEditing ? "Editing post" : "New post"}
                 </p>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setIsPreview(!isPreview)} style={btnSmall}>
-                    {isPreview ? "Edit" : "Preview"}
-                  </button>
+                <div className="flex items-center gap-3">
+                  <div role="tablist" aria-label="Editor mode" className="flex items-center gap-0.5 p-0.5 rounded"
+                       style={{ background: "var(--bg-hover)", border: "1px solid var(--border)" }}>
+                    <button type="button" role="tab" aria-selected={!isPreview} onClick={() => setIsPreview(false)}
+                            style={tabBtn(!isPreview)}>
+                      Write
+                    </button>
+                    <button type="button" role="tab" aria-selected={isPreview} onClick={() => setIsPreview(true)}
+                            style={tabBtn(isPreview)}>
+                      Preview
+                    </button>
+                  </div>
                   <button type="button" onClick={handleCancelEdit}
                           style={{ ...btnSmall, color: "var(--tx-3)", background: "transparent" }}>
                     Cancel
                   </button>
                 </div>
               </div>
-
-              {/* IdeaBox */}
-              {!isPreview && (
-                <div className="mb-5">
-                  <IdeaBox
-                    content={newPost.description}
-                    onInsertTitle={(title) => setNewPost({ ...newPost, title })}
-                    onInsertContent={(content) => setNewPost((p) => ({ ...p, description: content }))}
-                  />
-                </div>
-              )}
 
               {isPreview ? (
                 /* Preview */
@@ -780,15 +794,23 @@ export default function AdminDashboard() {
                       {newPost.links && newPost.links.length > 0 && (
                         <div className="mt-8 pt-6" style={{ borderTop: "1px solid var(--border-faint)" }}>
                           <p className="text-xs font-medium uppercase tracking-[0.1em] mb-3" style={{ color: "var(--tx-3)" }}>Links</p>
-                          {newPost.links.map((link, i) => (
-                            <div key={i} className="mb-2">
-                              <a href={link.url} target="_blank" rel="noopener noreferrer"
-                                 className="text-sm transition-colors hover:text-[var(--accent-hi)]"
-                                 style={{ color: "var(--accent)" }}>
-                                {link.text} →
+                          {newPost.links.map((link, i) => {
+                            const label = formatLinkLabel(link);
+                            const domain = formatLinkDomain(link.url);
+                            return (
+                              <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
+                                 className="group flex items-center gap-2 mb-2">
+                                <span className="text-sm transition-colors" style={{ color: "var(--accent)" }}>
+                                  {label}
+                                </span>
+                                {label !== domain && (
+                                  <span className="text-xs font-mono truncate" style={{ color: "var(--tx-3)" }}>{domain}</span>
+                                )}
+                                <ArrowUpRight size={13} className="shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                                              style={{ color: "var(--tx-3)" }} />
                               </a>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </>

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTrendingTopics, getPostDetails, NewsTopic } from '@/lib/reddit';
+import { getTrendingTopics, getPostDetails } from '@/lib/reddit';
 import { getTrendingHNTopics, getHNComments } from '@/lib/hackernews';
 import { getTrendingPapers } from '@/lib/papers';
+import { selectTopTopics } from '@/lib/topic-ranking';
 import { generateNewsArticle } from '@/lib/news-generator';
 import { createNewsArticle } from '@/lib/news';
 
@@ -15,27 +16,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch from all sources in parallel
+    // Fetch from all sources in parallel, keeping each source's results separate
+    // so none of them can crowd another out during selection (see selectTopTopics).
     const [redditTopics, hnTopics, paperTopics] = await Promise.all([
       getTrendingTopics(5),
       getTrendingHNTopics(5),
       getTrendingPapers(5),
     ]);
 
-    // Combine and rank by engagement rate, pick top 3
-    const allTopics: (NewsTopic & { engagementRate: number })[] = [
-      ...redditTopics,
-      ...hnTopics,
-      ...paperTopics,
-    ].map((topic) => {
-      const now = Date.now() / 1000;
-      const ageHours = Math.max((now - topic.created_utc) / 3600, 1);
-      const engagementRate = (topic.score + topic.num_comments * 2) / ageHours;
-      return { ...topic, engagementRate };
-    });
-
-    allTopics.sort((a, b) => b.engagementRate - a.engagementRate);
-    const topics = allTopics.slice(0, 3);
+    const topics = selectTopTopics([redditTopics, hnTopics, paperTopics], 3);
 
     if (topics.length === 0) {
       return NextResponse.json({

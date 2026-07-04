@@ -104,6 +104,17 @@ article p {
   background: var(--tx-2);
 }
 
+/* ─── AI edit flash ──────────────────────── */
+@keyframes ai-flash-fade {
+  0%   { background-color: oklch(62% 0.15 145 / 0.32); }
+  100% { background-color: oklch(62% 0.15 145 / 0); }
+}
+
+.ai-flash {
+  animation: ai-flash-fade 1.4s ease-out forwards;
+  border-radius: 2px;
+}
+
 /* ─── Blog / article reading ────────────── */
 .article-body {
   color: var(--tx-2);
