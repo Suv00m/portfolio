@@ -94,13 +94,23 @@ async function saveLastKnown(value: NowPlaying) {
   if (error) console.error("Error saving last-played track:", error);
 }
 
+// data.url/data.image round-trip through Supabase; validate before trusting them as href/src.
+function sanitize(np: NowPlaying | null): NowPlaying | null {
+  if (!np) return np;
+  return {
+    ...np,
+    url: /^https:\/\/open\.spotify\.com\//.test(np.url) ? np.url : "",
+    image: /^https:\/\/i\.scdn\.co\//.test(np.image) ? np.image : "",
+  };
+}
+
 let cachedResult: { value: NowPlaying | null; expiresAt: number } | null = null;
 const RESULT_TTL_MS = 10_000;
 
 export async function getNowPlaying(): Promise<NowPlaying | null> {
   if (cachedResult && cachedResult.expiresAt > Date.now()) return cachedResult.value;
 
-  const result = await fetchNowPlaying();
+  const result = sanitize(await fetchNowPlaying());
   cachedResult = { value: result, expiresAt: Date.now() + RESULT_TTL_MS };
   return result;
 }
