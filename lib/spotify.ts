@@ -1,3 +1,5 @@
+import { supabaseAdmin } from "./supabase";
+
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const REFRESH_TOKEN = process.env.SPOTIFY_REFRESH_TOKEN;
@@ -62,8 +64,36 @@ function fromEpisode(item: any, isPlaying: boolean): NowPlaying {
   };
 }
 
-// ponytail: in-memory only, resets on server restart/cold start. Swap for a KV/file if that matters.
+const LAST_PLAYED_KEY = "spotify_last_played";
+
+// in-memory copy of the DB row, avoids a Supabase round trip on every request
 let lastKnown: NowPlaying | null = null;
+let lastKnownLoaded = false;
+
+async function loadLastKnown(): Promise<NowPlaying | null> {
+  if (lastKnownLoaded) return lastKnown;
+  lastKnownLoaded = true;
+  const { data, error } = await supabaseAdmin.from("site_settings").select("value").eq("key", LAST_PLAYED_KEY).single();
+  if (error && error.code !== "PGRST116") console.error("Error loading last-played track:", error);
+  if (data?.value) {
+    try {
+      lastKnown = JSON.parse(data.value);
+    } catch {
+      lastKnown = null;
+    }
+  }
+  return lastKnown;
+}
+
+async function saveLastKnown(value: NowPlaying) {
+  lastKnown = value;
+  lastKnownLoaded = true;
+  const { error } = await supabaseAdmin
+    .from("site_settings")
+    .upsert({ key: LAST_PLAYED_KEY, value: JSON.stringify(value) }, { onConflict: "key" });
+  if (error) console.error("Error saving last-played track:", error);
+}
+
 let cachedResult: { value: NowPlaying | null; expiresAt: number } | null = null;
 const RESULT_TTL_MS = 10_000;
 
@@ -84,11 +114,12 @@ async function fetchNowPlaying(): Promise<NowPlaying | null> {
   if (playing.status === 200 && playingText) {
     const data = JSON.parse(playingText);
     if (data?.item) {
-      lastKnown =
+      const result =
         data.currently_playing_type === "episode"
           ? fromEpisode(data.item, Boolean(data.is_playing))
           : fromTrack(data.item, Boolean(data.is_playing));
-      return lastKnown;
+      await saveLastKnown(result);
+      return result;
     }
   }
 
@@ -98,10 +129,11 @@ async function fetchNowPlaying(): Promise<NowPlaying | null> {
     const data = JSON.parse(recentText);
     const item = data?.items?.[0]?.track;
     if (item) {
-      lastKnown = fromTrack(item, false);
-      return lastKnown;
+      const result = fromTrack(item, false);
+      await saveLastKnown(result);
+      return result;
     }
   }
 
-  return lastKnown;
+  return loadLastKnown();
 }
