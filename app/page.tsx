@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { BlogPost } from "@/lib/types";
@@ -88,47 +89,49 @@ function VideoHover({ children }: { children: React.ReactNode }) {
       >
         {children}
       </span>
-      {anchor && (
-        <div
-          style={{
-            position: "fixed",
-            top: anchor.top,
-            left: anchor.left,
-            zIndex: 200,
-            padding: "8px",
-            background: "var(--bg-subtle)",
-            border: "1px solid var(--border)",
-            borderRadius: "8px",
-            boxShadow: "0 20px 56px oklch(0% 0 0 / 0.55)",
-            pointerEvents: "none",
-          }}
-        >
-          <p style={{ fontSize: "10px", color: "var(--tx-3)", marginBottom: "6px", letterSpacing: "0.06em" }}>
-            Agent Output
-          </p>
-          <div style={{ display: "flex", gap: "8px" }}>
-            {SHOWCASE_VIDEOS.map((v, i) => (
-              <video
-                key={i}
-                src={v.src}
-                poster={v.poster}
-                autoPlay
-                muted
-                loop
-                playsInline
-                style={{
-                  width: "116px",
-                  display: "block",
-                  borderRadius: "4px",
-                  aspectRatio: "9/16",
-                  objectFit: "cover",
-                  background: "var(--bg)",
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      {anchor &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              top: anchor.top,
+              left: anchor.left,
+              zIndex: 200,
+              padding: "8px",
+              background: "var(--bg-subtle)",
+              border: "1px solid var(--border)",
+              borderRadius: "8px",
+              boxShadow: "0 20px 56px oklch(0% 0 0 / 0.55)",
+              pointerEvents: "none",
+            }}
+          >
+            <p style={{ fontSize: "10px", color: "var(--tx-3)", marginBottom: "6px", letterSpacing: "0.06em" }}>
+              Agent Output
+            </p>
+            <div style={{ display: "flex", gap: "8px" }}>
+              {SHOWCASE_VIDEOS.map((v, i) => (
+                <video
+                  key={i}
+                  src={v.src}
+                  poster={v.poster}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  style={{
+                    width: "116px",
+                    display: "block",
+                    borderRadius: "4px",
+                    aspectRatio: "9/16",
+                    objectFit: "cover",
+                    background: "var(--bg)",
+                  }}
+                />
+              ))}
+            </div>
+          </div>,
+          document.body
+        )}
     </>
   );
 }
@@ -163,23 +166,25 @@ function TextHover({ children, note }: { children: React.ReactNode; note: string
       >
         {children}
       </span>
-      {anchor && (
-        <div style={{
-          position: "fixed",
-          top: anchor.top,
-          left: anchor.left,
-          zIndex: 200,
-          maxWidth: "256px",
-          padding: "8px 12px",
-          background: "var(--bg-subtle)",
-          border: "1px solid var(--border)",
-          borderRadius: "6px",
-          boxShadow: "0 12px 40px oklch(0% 0 0 / 0.45)",
-          pointerEvents: "none",
-        }}>
-          <p style={{ fontSize: "11px", lineHeight: "1.6", color: "var(--tx-2)", margin: 0 }}>{note}</p>
-        </div>
-      )}
+      {anchor &&
+        createPortal(
+          <div style={{
+            position: "fixed",
+            top: anchor.top,
+            left: anchor.left,
+            zIndex: 200,
+            maxWidth: "256px",
+            padding: "8px 12px",
+            background: "var(--bg-subtle)",
+            border: "1px solid var(--border)",
+            borderRadius: "6px",
+            boxShadow: "0 12px 40px oklch(0% 0 0 / 0.45)",
+            pointerEvents: "none",
+          }}>
+            <p style={{ fontSize: "11px", lineHeight: "1.6", color: "var(--tx-2)", margin: 0 }}>{note}</p>
+          </div>,
+          document.body
+        )}
     </>
   );
 }
@@ -192,6 +197,62 @@ const CELL_COLORS = [
   "oklch(60% 0.11 155)",
 ];
 const DAY_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""];
+
+interface NowPlayingData {
+  isPlaying: boolean;
+  title: string;
+  artist: string;
+  url: string;
+  image: string;
+}
+
+function NowPlaying() {
+  const [data, setData] = useState<NowPlayingData | null>(null);
+
+  useEffect(() => {
+    const load = () =>
+      fetch("/api/spotify")
+        .then((r) => r.json())
+        .then(setData)
+        .catch(() => {});
+    load();
+    const id = setInterval(load, 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (!data?.title) return null;
+
+  return (
+    <section className="mb-16">
+      <p
+        className="text-xs font-medium uppercase mb-4"
+        style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}
+      >
+        {data.isPlaying ? "Now Playing" : "Last Played"}
+      </p>
+      <a
+        href={data.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 group w-fit"
+      >
+        {data.image && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={data.image} alt="" width={40} height={40} style={{ borderRadius: "4px" }} />
+        )}
+        <div>
+          <p
+            className="text-sm group-hover:text-[var(--accent)] transition-colors duration-150"
+            style={{ color: "var(--tx-1)" }}
+          >
+            {data.title}
+          </p>
+          <p className="text-xs" style={{ color: "var(--tx-3)" }}>{data.artist}</p>
+        </div>
+      </a>
+    </section>
+  );
+}
 
 function ContributionGraph() {
   const [weeks, setWeeks] = useState<{ date: string; level: number; count: number }[][]>([]);
@@ -562,6 +623,9 @@ export default function Home() {
             All posts →
           </Link>
         </section>
+
+        {/* Now Playing */}
+        <NowPlaying />
 
         {/* Activity */}
         <ContributionGraph />
