@@ -220,36 +220,38 @@ function NowPlaying() {
     return () => clearInterval(id);
   }, []);
 
-  if (!data?.title) return null;
-
   return (
     <section className="mb-16">
       <p
         className="text-xs font-medium uppercase mb-4"
         style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}
       >
-        {data.isPlaying ? "Now Playing" : "Last Played"}
+        {data?.title ? (data.isPlaying ? "Now Playing" : "Last Played") : "Now Playing"}
       </p>
-      <a
-        href={data.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-3 group w-fit"
-      >
-        {data.image && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={data.image} alt="" width={40} height={40} style={{ borderRadius: "4px" }} />
-        )}
-        <div>
-          <p
-            className="text-sm group-hover:text-[var(--accent)] transition-colors duration-150"
-            style={{ color: "var(--tx-1)" }}
-          >
-            {data.title}
-          </p>
-          <p className="text-xs" style={{ color: "var(--tx-3)" }}>{data.artist}</p>
-        </div>
-      </a>
+      {data?.title ? (
+        <a
+          href={data.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 group w-fit"
+        >
+          {data.image && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={data.image} alt="" width={40} height={40} style={{ borderRadius: "4px" }} />
+          )}
+          <div>
+            <p
+              className="text-sm group-hover:text-[var(--accent)] transition-colors duration-150"
+              style={{ color: "var(--tx-1)" }}
+            >
+              {data.title}
+            </p>
+            <p className="text-xs" style={{ color: "var(--tx-3)" }}>{data.artist}</p>
+          </div>
+        </a>
+      ) : (
+        <p className="text-sm" style={{ color: "var(--tx-3)" }}>Nothing playing right now.</p>
+      )}
     </section>
   );
 }
