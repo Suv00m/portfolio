@@ -45,13 +45,13 @@ const socials = [
 const SHOWCASE_VIDEOS = [
   {
     label: "Agent Output",
-    src: "https://media.behooked.co/transform/behooked_assets/explore/agent-showcase/agent-demo.webm?op=transcode&w=480&q=60",
-    poster: "https://media.behooked.co/transform/behooked_assets/explore/agent-showcase/agent-demo.webm?op=thumbnail_at&t=00%3A00%3A03&format=webp",
+    src: "https://media.behooked.co/output/video/behooked_assets/explore/agent-showcase/agent-3_transcode.webm",
+    poster: "https://media.behooked.co/transform/behooked_assets/explore/agent-showcase/agent-3.webm?op=thumbnail_at&t=00%3A00%3A03&format=webp",
   },
   {
     label: "Agent Output",
-    src: "https://media.behooked.co/transform/behooked_assets/explore/agent-showcase/agent-fal.webm?op=transcode&w=480&q=60",
-    poster: "https://media.behooked.co/transform/behooked_assets/explore/agent-showcase/agent-fal.webm?op=thumbnail_at&t=00%3A00%3A03&format=webp",
+    src: "https://media.behooked.co/transform/behooked_assets/explore/agent-showcase/agent-2.webm?op=transcode&w=480&q=60",
+    poster: "https://media.behooked.co/transform/behooked_assets/explore/agent-showcase/agent-2.webm?op=thumbnail_at&t=00%3A00%3A03&format=webp",
   },
 ];
 
@@ -83,9 +83,9 @@ function VideoHover({ children }: { children: React.ReactNode }) {
         style={{
           borderBottom: "1px dotted var(--tx-3)",
           cursor: "default",
+          color: "var(--tx-1)",
           transition: "color 0.12s ease-out",
         }}
-        className="hover:text-[var(--tx-1)]"
       >
         {children}
       </span>
@@ -161,8 +161,7 @@ function TextHover({ children, note }: { children: React.ReactNode; note: string
         ref={ref}
         onMouseEnter={show}
         onMouseLeave={hide}
-        style={{ borderBottom: "1px dotted var(--tx-3)", cursor: "default", transition: "color 0.12s ease-out" }}
-        className="hover:text-[var(--tx-1)]"
+        style={{ borderBottom: "1px dotted var(--tx-3)", cursor: "default", color: "var(--tx-1)", transition: "color 0.12s ease-out" }}
       >
         {children}
       </span>
