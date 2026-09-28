@@ -3,6 +3,7 @@ import { Figtree, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import PrismLoader from "@/components/PrismLoader";
 import CommandPalette from "@/components/CommandPalette";
+import { Agentation } from "agentation";
 
 const figtree = Figtree({
   variable: "--font-sans",
@@ -51,6 +52,7 @@ export default function RootLayout({
         <PrismLoader />
         <CommandPalette />
         {children}
+        {process.env.NODE_ENV === "development" && <Agentation />}
       </body>
     </html>
   );

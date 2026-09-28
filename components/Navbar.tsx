@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const links = [
   { href: "/blog",     label: "Writing"  },
@@ -14,40 +14,25 @@ const links = [
 export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
   return (
     <>
-      <header
-        className="fixed top-0 inset-x-0 z-50"
-        style={{
-          background: scrolled
-            ? "color-mix(in oklch, var(--bg) 85%, transparent)"
-            : "var(--bg)",
-          borderBottom: scrolled ? "1px solid var(--border-faint)" : "1px solid transparent",
-          backdropFilter: scrolled ? "blur(12px)" : "none",
-          WebkitBackdropFilter: scrolled ? "blur(12px)" : "none",
-          transition: "background 0.2s, border-color 0.2s, backdrop-filter 0.2s",
-        }}
-      >
+      <header className="relative z-50">
         <div
-          className="mx-auto flex h-14 items-center justify-between px-6"
-          style={{ maxWidth: "720px" }}
+          className="mx-auto flex items-center justify-between px-6 py-5"
+          style={{ maxWidth: "680px" }}
         >
           <Link
             href="/"
-            className="text-sm font-semibold tracking-tight transition-colors duration-150"
+            className="flex flex-col gap-0.5 transition-colors duration-150"
             style={{ color: pathname === "/" ? "var(--tx-1)" : "var(--tx-2)" }}
           >
-            Shuvam Mandal
+            <span className="text-xl font-semibold tracking-tight">Shuvam Mandal</span>
+            <span className="text-sm" style={{ color: "var(--tx-3)" }}>
+              Engineer. Builder.
+            </span>
           </Link>
 
           {/* Desktop */}

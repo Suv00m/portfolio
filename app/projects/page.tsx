@@ -45,7 +45,7 @@ const projects = [
   },
   {
     title: "AI News Pipeline",
-    description: "Automated news aggregation scraping Reddit, Hacker News, and arXiv — generates editorial-quality articles via LLM.",
+    description: "Automated news aggregation scraping Reddit, Hacker News, and arXiv. Generates editorial-quality articles via LLM.",
     tags: ["Next.js", "OpenRouter", "Supabase"],
     year: "2024",
     status: "Running",
@@ -57,7 +57,7 @@ export default function Projects() {
     <main style={{ background: "var(--bg)", color: "var(--tx-1)", minHeight: "100vh" }}>
       <Navbar />
 
-      <div className="mx-auto px-6 pt-32 pb-24" style={{ maxWidth: "680px" }}>
+      <div className="mx-auto px-6 pt-10 pb-24" style={{ maxWidth: "680px" }}>
         <header className="mb-12">
           <h1 className="text-xl font-semibold tracking-tight mb-2">Projects</h1>
           <p className="text-sm" style={{ color: "var(--tx-2)" }}>

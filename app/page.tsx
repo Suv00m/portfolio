@@ -223,7 +223,7 @@ function NowPlaying() {
     <section className="mb-16">
       <p
         className="text-xs font-medium uppercase mb-4"
-        style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}
+        style={{ color: "var(--tx-1)", letterSpacing: "0.1em" }}
       >
         {data?.title ? (data.isPlaying ? "Now Playing" : "Last Played") : "Now Playing"}
       </p>
@@ -307,7 +307,7 @@ function ContributionGraph() {
 
   return (
     <section className="mb-16">
-      <p className="text-xs font-medium uppercase mb-4" style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}>
+      <p className="text-xs font-medium uppercase mb-4" style={{ color: "var(--tx-1)", letterSpacing: "0.1em" }}>
         Activity
       </p>
       <div style={{ overflowX: "auto", paddingBottom: "4px" }}>
@@ -493,16 +493,10 @@ export default function Home() {
     <main style={{ background: "var(--bg)", color: "var(--tx-1)", minHeight: "100vh" }}>
       <Navbar />
 
-      <div className="mx-auto px-6 pt-32 pb-24" style={{ maxWidth: "680px" }}>
+      <div className="mx-auto px-6 pt-10 pb-24" style={{ maxWidth: "680px" }}>
         {/* Intro */}
         <section className="mb-16">
-          <h1 className="text-xl font-semibold tracking-tight mb-1">
-            Shuvam Mandal
-          </h1>
-          <p className="text-sm mb-6" style={{ color: "var(--tx-2)" }}>
-            Engineer. Builder.
-          </p>
-          <p className="text-sm leading-relaxed" style={{ color: "var(--tx-2)", maxWidth: "52ch" }}>
+          <p className="text-sm leading-relaxed" style={{ color: "var(--tx-2)" }}>
             I build software and AI products. Currently building{" "}
             <TextHover note="Job companion. Helps you find jobs at every point of your life.">dotresume.org</TextHover>
             {" "}and{" "}
@@ -517,24 +511,46 @@ export default function Home() {
             >
               behooked.co
             </a>
-            {" "}, built the multimodal transcoding pipeline handling{" "}
+            , built the multimodal transcoding pipeline handling{" "}
             <TextHover note="Handles video transcoding, thumbnail generation, and format conversion at scale. Custom pipeline infrastructure built for behooked.co.">100k+ media files</TextHover>,
             and an AI agent orchestrator that generated{" "}
             <VideoHover>1.5k+ videos</VideoHover>,
             out-competing{" "}
             <TextHover note="Leading AI video platforms backed by VC. The agent system matched and exceeded their output quality.">HeyGen and Caption</TextHover>.
-            Also built yuj, a Hindi LLM with{" "}
+            Also built <TextHover note="yuj-v1: MoE 7B Hindi LLM, published open-weights on HuggingFace.">yuj</TextHover>, a Hindi LLM with{" "}
             <TextHover note="yuj-v1: MoE 7B model fine-tuned for Hindi text generation, published on HuggingFace.">3.5k+ monthly downloads</TextHover>.{" "}
             <TextHover note="Expert rank in both Notebooks and Datasets on Kaggle — top ~1% on the platform.">2x Kaggle Expert</TextHover>.
             Based in India.
           </p>
+          <div className="flex flex-wrap items-center gap-3 mt-6">
+            <Link
+              href="/contact"
+              className="text-sm font-medium rounded-lg px-3.5 py-1.5 transition-opacity duration-150 hover:opacity-90"
+              style={{ background: "var(--tx-1)", color: "var(--bg)" }}
+            >
+              Book a call
+            </Link>
+            <a
+              href="https://x.com/messages/compose?recipient_id=1538739619852066816"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Message on X"
+              className="inline-flex items-center gap-1.5 text-sm font-medium rounded-lg px-3.5 py-1.5 transition-colors duration-150 hover:border-[var(--tx-3)]"
+              style={{ background: "var(--bg-subtle)", color: "var(--tx-1)", border: "1px solid var(--border)" }}
+            >
+              Message on
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+            </a>
+          </div>
         </section>
 
         {/* Work */}
         <section className="mb-16">
           <p
             className="text-xs font-medium uppercase mb-4"
-            style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}
+            style={{ color: "var(--tx-1)", letterSpacing: "0.1em" }}
           >
             Work
           </p>
@@ -581,7 +597,7 @@ export default function Home() {
         <section className="mb-16">
           <p
             className="text-xs font-medium uppercase mb-4"
-            style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}
+            style={{ color: "var(--tx-1)", letterSpacing: "0.1em" }}
           >
             Writing
           </p>
@@ -635,7 +651,7 @@ export default function Home() {
         <section>
           <p
             className="text-xs font-medium uppercase mb-4"
-            style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}
+            style={{ color: "var(--tx-1)", letterSpacing: "0.1em" }}
           >
             Elsewhere
           </p>

@@ -41,7 +41,7 @@ export default function Socials() {
     <main style={{ background: "var(--bg)", color: "var(--tx-1)", minHeight: "100vh" }}>
       <Navbar />
 
-      <div className="mx-auto px-6 pt-32 pb-24" style={{ maxWidth: "680px" }}>
+      <div className="mx-auto px-6 pt-10 pb-24" style={{ maxWidth: "680px" }}>
         <header className="mb-12">
           <h1 className="text-xl font-semibold tracking-tight mb-2">Elsewhere</h1>
           <p className="text-sm" style={{ color: "var(--tx-2)" }}>
@@ -95,7 +95,7 @@ export default function Socials() {
         >
           <p
             className="text-xs font-medium uppercase mb-3"
-            style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}
+            style={{ color: "var(--tx-1)", letterSpacing: "0.1em" }}
           >
             Email
           </p>

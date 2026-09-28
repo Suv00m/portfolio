@@ -48,7 +48,7 @@ export default function Contact() {
     <main style={{ background: "var(--bg)", color: "var(--tx-1)", minHeight: "100vh" }}>
       <Navbar />
 
-      <div className="mx-auto px-6 pt-32 pb-24" style={{ maxWidth: "680px" }}>
+      <div className="mx-auto px-6 pt-10 pb-24" style={{ maxWidth: "680px" }}>
         <header className="mb-10">
           <h1 className="text-xl font-semibold tracking-tight mb-2">Contact</h1>
           <p className="text-sm" style={{ color: "var(--tx-2)" }}>
@@ -58,7 +58,7 @@ export default function Contact() {
 
         {/* Email */}
         <section className="mb-10 pb-8" style={{ borderBottom: "1px solid var(--border-faint)" }}>
-          <p className="text-xs font-medium uppercase mb-3" style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}>
+          <p className="text-xs font-medium uppercase mb-3" style={{ color: "var(--tx-1)", letterSpacing: "0.1em" }}>
             Email
           </p>
           <a
@@ -72,7 +72,7 @@ export default function Contact() {
 
         {/* Cal.com embed */}
         <section className="mb-10">
-          <p className="text-xs font-medium uppercase mb-4" style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}>
+          <p className="text-xs font-medium uppercase mb-4" style={{ color: "var(--tx-1)", letterSpacing: "0.1em" }}>
             Schedule a call
           </p>
           <div

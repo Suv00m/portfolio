@@ -49,7 +49,7 @@ export default function NewsDirectory() {
     <main style={{ background: "var(--bg)", color: "var(--tx-1)", minHeight: "100vh" }}>
       <Navbar />
 
-      <div className="mx-auto px-6 pt-32 pb-24" style={{ maxWidth: "680px" }}>
+      <div className="mx-auto px-6 pt-10 pb-24" style={{ maxWidth: "680px" }}>
         <header className="mb-10">
           <h1 className="text-xl font-semibold tracking-tight mb-2">News</h1>
           <p className="text-sm" style={{ color: "var(--tx-2)" }}>

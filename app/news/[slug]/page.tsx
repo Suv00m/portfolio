@@ -193,7 +193,7 @@ export default async function NewsArticlePage({ params }: Props) {
       <Navbar />
       <ArticleJsonLd article={article} />
 
-      <div className="mx-auto px-6 pt-28 pb-24" style={{ maxWidth: "680px" }}>
+      <div className="mx-auto px-6 pt-8 pb-24" style={{ maxWidth: "680px" }}>
         <article>
           {/* Back + meta */}
           <div className="flex items-center justify-between mb-8">
@@ -283,7 +283,7 @@ export default async function NewsArticlePage({ params }: Props) {
             >
               <p
                 className="text-xs font-medium uppercase mb-3"
-                style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}
+                style={{ color: "var(--tx-1)", letterSpacing: "0.1em" }}
               >
                 Source
               </p>
@@ -310,7 +310,7 @@ export default async function NewsArticlePage({ params }: Props) {
             >
               <p
                 className="text-xs font-medium uppercase mb-4"
-                style={{ color: "var(--tx-3)", letterSpacing: "0.1em" }}
+                style={{ color: "var(--tx-1)", letterSpacing: "0.1em" }}
               >
                 Related
               </p>
