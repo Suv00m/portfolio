@@ -142,7 +142,7 @@ export default function CommandPalette() {
           </div>
 
           {/* Results */}
-          <div className="max-h-80 overflow-y-auto">
+          <div data-lenis-prevent className="max-h-80 overflow-y-auto">
             {/* Navigation section */}
             {filteredNav.length > 0 && (
               <div>

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Figtree, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import "lenis/dist/lenis.css";
 import PrismLoader from "@/components/PrismLoader";
 import CommandPalette from "@/components/CommandPalette";
+import SmoothScroll from "@/components/SmoothScroll";
 import { Agentation } from "agentation";
 
 const figtree = Figtree({
@@ -49,6 +51,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${figtree.variable} ${jetbrainsMono.variable} antialiased`}>
+        <SmoothScroll />
         <PrismLoader />
         <CommandPalette />
         {children}

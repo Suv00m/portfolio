@@ -9,6 +9,7 @@ import { BlogPost, BlogLink, NewsArticle } from "@/lib/types";
 import { processEmbedContent } from "@/lib/embed-utils";
 import { initializeCopyButtons } from "@/lib/code-copy-utils";
 import { formatLinkLabel, formatLinkDomain } from "@/lib/link-utils";
+import { smoothScrollTo } from "@/lib/smooth-scroll";
 import { ArrowUpRight } from "lucide-react";
 
 const DRAFTS_KEY = 'admin_post_drafts';
@@ -345,7 +346,7 @@ export default function AdminDashboard() {
     setIsEditing(post.id);
     setIsCreating(true);
     setIsPreview(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    smoothScrollTo(0);
   };
 
   const handleUpdatePost = async (e: React.FormEvent) => {
@@ -572,7 +573,8 @@ export default function AdminDashboard() {
       tags: article.tags.join(", "),
       created_at: new Date(article.created_at).toISOString().slice(0, 16),
     });
-    window.scrollTo({ top: document.getElementById("news-edit-form")?.offsetTop || 0, behavior: "smooth" });
+    const el = document.getElementById("news-edit-form");
+    if (el) smoothScrollTo(el);
   };
 
   const handleUpdateNews = async (e: React.FormEvent) => {

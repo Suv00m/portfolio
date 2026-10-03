@@ -194,7 +194,7 @@ export default function ImagePicker({ onSelect, currentImage, onClose }: ImagePi
         </div>
 
         {/* Image Grid */}
-        <div className="flex-1 overflow-y-auto p-5">
+        <div data-lenis-prevent className="flex-1 overflow-y-auto p-5">
           {isLoading && images.length === 0 ? (
             <div className="flex items-center justify-center h-64">
               <p className="text-sm" style={{ color: 'var(--tx-3)' }}>Searching images...</p>
